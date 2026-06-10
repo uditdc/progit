@@ -79,7 +79,7 @@ export function TipCap({
         }}
       >
         <span className="sw" style={{ background: dot }} />
-        <span style={{ fontSize: 9 }}>★</span>
+        <span style={{ fontSize: 10 }}>★</span>
         {r.name}
       </span>
     );

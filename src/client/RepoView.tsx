@@ -391,7 +391,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
           <div>
             <div className="big">⚠</div>
             <div style={{ marginBottom: 14, color: 'var(--tx-mid)' }}>{(repoQ.error as Error).message}</div>
-            <div className="mono" style={{ marginBottom: 18, color: 'var(--tx-lo)', fontSize: 12 }}>{repoPath}</div>
+            <div className="mono" style={{ marginBottom: 18, color: 'var(--tx-lo)', fontSize: 13 }}>{repoPath}</div>
             <button className="tb-btn" onClick={navigateHome}>← Back to repositories</button>
           </div>
         </div>
@@ -451,7 +451,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                   <span className="sw" style={{ background: branchColor(b.name) }} />
                   <span className="nm">{b.name}</span>
                   <span className="meta">
-                    {b.name === currentBranch && <span style={{ color: 'var(--accent)', fontSize: 11 }}>★</span>}
+                    {b.name === currentBranch && <span style={{ color: 'var(--accent)', fontSize: 12 }}>★</span>}
                     {b.upstream && !b.upstreamGone && (
                       <span className="ab">
                         <span className="up">↑{b.ahead ?? 0}</span>
@@ -493,7 +493,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                 </div>
               ))}
               {filteredRefs.locals.length + filteredRefs.remotes.length + filteredRefs.tagList.length === 0 && (
-                <div style={{ padding: '14px 12px', fontSize: 12, color: 'var(--tx-lo)', textAlign: 'center' }}>No matches</div>
+                <div style={{ padding: '14px 12px', fontSize: 13, color: 'var(--tx-lo)', textAlign: 'center' }}>No matches</div>
               )}
             </div>
             <div className="pop-foot">
@@ -593,7 +593,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
               </div>
               <div style={{ padding: '10px 13px', display: 'flex', flexDirection: 'column', gap: 12 }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 12, color: 'var(--tx)' }}>Diff mode</span>
+                  <span style={{ fontSize: 13, color: 'var(--tx)' }}>Diff mode</span>
                   <div className="seg">
                     <button className={settings.diffMode === 'inline' ? 'on' : ''} onClick={() => setSetting('diffMode', 'inline')}>
                       Inline
@@ -604,13 +604,13 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                   </div>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 12, color: 'var(--tx)' }}>Collapse long lanes</span>
+                  <span style={{ fontSize: 13, color: 'var(--tx)' }}>Collapse long lanes</span>
                   <label className="chk" onClick={() => setSetting('collapse', !settings.collapse)} style={{ margin: 0 }}>
                     <span className={'cbx' + (settings.collapse ? ' on' : '')}>{settings.collapse && <Icon name="check" size={11} />}</span>
                   </label>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <span style={{ fontSize: 12, color: 'var(--tx)' }}>Accent</span>
+                  <span style={{ fontSize: 13, color: 'var(--tx)' }}>Accent</span>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {Object.keys(ACCENTS).map((a) => (
                       <span
@@ -797,7 +797,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
               <div>
                 <div className="big">∅</div>
                 No uncommitted changes
-                <div style={{ marginTop: 6, fontSize: 12, color: 'var(--tx-lo)' }}>Select a commit to view its diff</div>
+                <div style={{ marginTop: 6, fontSize: 13, color: 'var(--tx-lo)' }}>Select a commit to view its diff</div>
               </div>
             </div>
           ) : (
@@ -820,7 +820,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
           y={ctx.y}
           onClose={() => setCtx(null)}
           header={
-            <div style={{ padding: '4px 9px 6px', fontSize: 11, color: 'var(--tx-lo)', fontFamily: 'var(--mono)' }}>
+            <div style={{ padding: '4px 9px 6px', fontSize: 12, color: 'var(--tx-lo)', fontFamily: 'var(--mono)' }}>
               {ctx.c.shortHash} · {ctx.c.author}
             </div>
           }
@@ -839,7 +839,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
             <div
               style={{
                 padding: '5px 9px 7px',
-                fontSize: 11.5,
+                fontSize: 12.5,
                 color: 'var(--tx-hi)',
                 fontFamily: 'var(--mono)',
                 display: 'flex',
@@ -876,7 +876,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
             padding: '8px 14px',
             color: toast.error ? 'var(--red)' : 'var(--tx-hi)',
             boxShadow: 'var(--shadow)',
-            fontSize: 12.5,
+            fontSize: 13.5,
             maxWidth: 560,
             whiteSpace: 'pre-wrap',
           }}

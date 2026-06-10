@@ -335,7 +335,7 @@ export function DiffViewer({ groups, mode, staging, onStage, onStageAll }: DiffV
             onClick={() => (allStaged ? onStageAll(stagedFiles, true) : onStageAll(unstagedFiles, false))}
           >
             <span className={'cbx sm' + (allStaged ? ' on' : '')}>{allStaged && <Icon name="check" size={10} />}</span>
-            <span style={{ fontSize: 11.5, color: 'var(--tx-mid)' }}>All</span>
+            <span style={{ fontSize: 12.5, color: 'var(--tx-mid)' }}>All</span>
           </label>
         )}
         <span className="diff-stat tnum">

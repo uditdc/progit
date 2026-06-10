@@ -37,7 +37,7 @@
     "ignore": "^7.0.3"
   },
   "devDependencies": {
-    "@fontsource/ibm-plex-sans": "^5.2.0",
+    "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.0",
     "@tanstack/react-query": "^5.66.0",
     "@types/node": "^22.13.0",

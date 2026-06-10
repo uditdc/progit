@@ -40,7 +40,7 @@ export function CredentialDialog({
               }}
             />
           </label>
-          <div style={{ fontSize: 11, color: 'var(--tx-lo)' }}>
+          <div style={{ fontSize: 12, color: 'var(--tx-lo)' }}>
             Sent once to git for this operation — progit does not store credentials.
           </div>
         </div>
