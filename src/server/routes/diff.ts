@@ -13,31 +13,33 @@ export function diffRoutes(ctx: AppContext) {
   const r = new Hono();
 
   r.get('/diff/commit/:sha', async (c) => {
+    const { git } = await ctx.repo(c);
     const sha = c.req.param('sha');
     if (!validateRevision(sha)) return c.json({ error: 'Invalid revision' }, 400);
-    const parents = (await ctx.git.read(['rev-list', '--parents', '-n', '1', sha])).trim().split(' ');
+    const parents = (await git.read(['rev-list', '--parents', '-n', '1', sha])).trim().split(' ');
     let out: string;
     if (parents.length > 2) {
       // merge commit — show the first-parent diff
-      out = await ctx.git.read(['diff', ...DIFF_ARGS, `${sha}^1`, sha]);
+      out = await git.read(['diff', ...DIFF_ARGS, `${sha}^1`, sha]);
     } else {
-      out = await ctx.git.read(['diff-tree', '-p', '--root', ...DIFF_ARGS, sha]);
+      out = await git.read(['diff-tree', '-p', '--root', ...DIFF_ARGS, sha]);
     }
     return c.json({ sha, files: parseUnifiedDiff(out) } satisfies CommitDiffPayload);
   });
 
   r.get('/diff/working', async (c) => {
-    const cwd = await resolveWorktreeCwd(ctx, c.req.query('worktree'));
+    const repo = await ctx.repo(c);
+    const cwd = await resolveWorktreeCwd(repo, c.req.query('worktree'));
     const [unstagedOut, stagedOut, statusOut] = await Promise.all([
-      ctx.git.read(['diff', ...DIFF_ARGS], { cwd, okCodes: [0, 1] }),
-      ctx.git.read(['diff', '--cached', ...DIFF_ARGS], { cwd, okCodes: [0, 1] }),
-      ctx.git.read(['status', '--porcelain=v2', '-z', '--untracked-files=all'], { cwd }),
+      repo.git.read(['diff', ...DIFF_ARGS], { cwd, okCodes: [0, 1] }),
+      repo.git.read(['diff', '--cached', ...DIFF_ARGS], { cwd, okCodes: [0, 1] }),
+      repo.git.read(['status', '--porcelain=v2', '-z', '--untracked-files=all'], { cwd }),
     ]);
     const status = parseStatus(statusOut);
     const untracked: FileDiff[] = (
       await Promise.all(
         status.untracked.map(async (f) => {
-          const out = await ctx.git.read(
+          const out = await repo.git.read(
             ['diff', '--no-color', '--no-index', '--', '/dev/null', join(cwd, f.path)],
             { cwd, okCodes: [0, 1] },
           );

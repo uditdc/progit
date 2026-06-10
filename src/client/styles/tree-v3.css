@@ -166,6 +166,25 @@
 .drawer .detail-body { flex: 1; }
 .dh-top { padding-right: 34px; }
 
+/* ---------- home (open / recent repositories) ---------- */
+.home-stage { flex: 1; min-height: 0; display: grid; place-items: center; padding: 24px; overflow-y: auto; }
+.home-card { width: min(560px, 92vw); background: var(--bg-1); border: 1px solid var(--line); border-radius: 14px; box-shadow: var(--shadow); padding: 22px 24px 18px; }
+.home-title { font-size: 16px; font-weight: 600; color: var(--tx-hi); letter-spacing: -0.01em; }
+.home-sub { font-size: 12px; color: var(--tx-lo); margin-top: 4px; }
+.home-open { display: flex; gap: 8px; margin-top: 14px; }
+.home-open .tin { flex: 1; height: 36px; }
+.home-sec { margin-top: 20px; padding-bottom: 6px; font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; color: var(--tx-lo); border-bottom: 1px solid var(--line-soft); }
+.home-recent { margin-top: 4px; max-height: 320px; overflow-y: auto; }
+.home-recent .pop-row { padding: 8px 9px; }
+.home-remove { width: 20px; height: 20px; border-radius: 5px; border: 0; background: none; color: var(--tx-lo); cursor: pointer; opacity: 0; font-size: 11px; }
+.pop-row:hover .home-remove { opacity: 1; }
+.home-remove:hover { background: var(--bg-3); color: var(--tx-hi); }
+.home-hint { margin-top: 18px; font-size: 11px; color: var(--tx-lo); text-align: center; }
+.home-hint .k { border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--tx-mid); }
+.home-card .err { font-size: 11.5px; color: var(--red); }
+.home-card .tin { background: var(--bg-inset); border: 1px solid var(--line); border-radius: 9px; color: var(--tx-hi); font: inherit; font-size: 13px; padding: 0 12px; outline: none; }
+.home-card .tin:focus { border-color: var(--accent-line); box-shadow: 0 0 0 3px var(--accent-dim); }
+
 /* ---------- popover (branches / worktrees, summoned — not docked) ---------- */
 .pop {
   position: absolute; z-index: 60;

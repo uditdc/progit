@@ -1,8 +1,8 @@
 import { serve } from '@hono/node-server';
 import { execFile } from 'node:child_process';
-import { createApp } from './app.js';
-import { createGit } from './git.js';
-import { createWatcher } from './watcher.js';
+import { randomUUID } from 'node:crypto';
+import { createApp, type AppRuntime } from './app.js';
+import { createRegistry } from './repos.js';
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(name);
@@ -17,6 +17,24 @@ function openBrowser(url: string): void {
   execFile(cmd, [url], () => {});
 }
 
+function tryToplevel(cwd: string): Promise<string | null> {
+  return new Promise((resolve) => {
+    execFile('git', ['rev-parse', '--show-toplevel'], { cwd }, (err, stdout) => {
+      resolve(err ? null : stdout.trim());
+    });
+  });
+}
+
+async function isProgit(port: number): Promise<boolean> {
+  try {
+    const res = await fetch(`http://localhost:${port}/api/ping`, { signal: AbortSignal.timeout(1500) });
+    const body = (await res.json()) as { progit?: boolean };
+    return body.progit === true;
+  } catch {
+    return false;
+  }
+}
+
 async function main() {
   if (flag('--version')) {
     const { default: pkg } = await import('../../package.json', { with: { type: 'json' } });
@@ -25,41 +43,44 @@ async function main() {
   }
 
   const cwd = arg('--repo') ?? process.cwd();
-  let root: string;
-  try {
-    root = await new Promise<string>((resolve, reject) => {
-      execFile('git', ['rev-parse', '--show-toplevel'], { cwd }, (err, stdout, stderr) => {
-        if (err) reject(new Error(stderr.trim() || err.message));
-        else resolve(stdout.trim());
-      });
-    });
-  } catch {
-    console.error(`progit: not a git repository: ${cwd}`);
-    process.exit(1);
-  }
+  const cwdRepo = await tryToplevel(cwd);
 
-  const git = createGit(root);
-  const bus = await createWatcher(git);
-  const app = createApp({ git, bus });
+  const registry = createRegistry();
+  const runtime: AppRuntime = { port: 0, token: randomUUID() };
+  const app = createApp(registry, runtime);
 
-  const requested = Number(arg('--port')) || 8448;
+  const requested = Number(arg('--port')) || 8449;
+  const urlFor = (port: number) => {
+    const base = `http://localhost:${port}`;
+    return cwdRepo ? `${base}/#/repository?path=${encodeURIComponent(cwdRepo)}` : base;
+  };
+
   const server = serve({ fetch: app.fetch, port: requested, hostname: '127.0.0.1' }, (info) => {
-    const url = `http://localhost:${info.port}`;
-    console.log(`progit serving ${root}`);
-    console.log(`  ${url}`);
-    if (!flag('--no-open')) openBrowser(url);
+    runtime.port = info.port;
+    console.log(cwdRepo ? `progit serving ${cwdRepo}` : 'progit (no repository in cwd — open one from the home page)');
+    console.log(`  ${urlFor(info.port)}`);
+    if (!flag('--no-open')) openBrowser(urlFor(info.port));
   });
 
-  server.on('error', (err: NodeJS.ErrnoException) => {
+  server.on('error', async (err: NodeJS.ErrnoException) => {
     if (err.code === 'EADDRINUSE') {
-      console.error(`progit: port ${requested} in use — pass --port <n> to choose another`);
+      // a progit instance already owns the port — just open this repo there
+      if (await isProgit(requested)) {
+        const url = urlFor(requested);
+        console.log(`progit already running on port ${requested} — opening there`);
+        console.log(`  ${url}`);
+        if (!flag('--no-open')) openBrowser(url);
+        await registry.closeAll();
+        process.exit(0);
+      }
+      console.error(`progit: port ${requested} is taken by another program — pass --port <n> to choose another`);
       process.exit(1);
     }
     throw err;
   });
 
   const shutdown = async () => {
-    await bus.close();
+    await registry.closeAll();
     server.close();
     process.exit(0);
   };

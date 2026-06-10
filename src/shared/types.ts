@@ -138,6 +138,15 @@ export interface ChangeEvent {
   scope: ChangeScope;
 }
 
+/** git/ssh asked for credentials mid-operation; the UI must answer via /api/credentials. */
+export interface CredentialRequestEvent {
+  type: 'credential';
+  id: string;
+  prompt: string;
+}
+
+export type BusEvent = ChangeEvent | CredentialRequestEvent;
+
 export interface ApiError {
   error: string;
   code?: number;
@@ -167,6 +176,22 @@ export interface StagePathsBody {
 
 export interface CommitBody {
   message: string;
+}
+
+export interface FetchBody {
+  /** Remote name; all remotes when omitted. */
+  remote?: string;
+}
+
+export interface PushBody {
+  /** Branch to push; the checked-out branch when omitted. */
+  ref?: string;
+}
+
+export interface CredentialAnswerBody {
+  requestId: string;
+  /** Empty string cancels — git sees a failed prompt. */
+  value: string;
 }
 
 export const REF_NAME_RE = /^[A-Za-z0-9][A-Za-z0-9._/-]*$/;

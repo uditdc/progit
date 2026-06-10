@@ -13,6 +13,7 @@ A modern, web-based git visualization tool — a successor to [ungit](https://gi
 - **Branch & tag creation** — from the commit context menu ("create branch here"), branch pills, or the branches popover. Validated names, optional checkout-after-create.
 - **Checkout from anywhere** — branch pills on the tree, the branches popover (with live filter), remote branches (auto-creates a tracking branch).
 - **Worktree peek** — inspect any linked worktree's uncommitted changes + diffs without switching checkouts (top-right switcher).
+- **Push / fetch / pull** — live top-bar buttons (Pull appears with the ↓behind count; pull is `--ff-only` until merge/rebase land), plus per-branch push and per-remote fetch from the pill menus. When a remote needs **credentials**, git's askpass prompt becomes a browser modal (masked for passwords/tokens, answered once per operation, never stored) — works for https auth and ssh passphrases via `SSH_ASKPASS`.
 - **Focus + collapse** — long ref-less runs fold into "⋯ N more commits" breaks; histories load 500 commits at a time with "load more".
 - **Keyboard** — `j`/`k`/arrows step through commits, `Esc` dismisses everything.
 - Handles detached HEAD, octopus merges, renames, binary files, empty repos, and 30k-commit repos (first paint < 200ms; per-commit stats stream in after).
@@ -25,11 +26,14 @@ Git mutations always shell out to your real `git` (no reimplementation), are ser
 pnpm install
 pnpm build
 
-# run inside any git repository
-node bin/progit.js            # starts the server, opens your browser
+node bin/progit.js            # in a repo: opens the browser straight on it
 node bin/progit.js --port 8000 --no-open
 node bin/progit.js --repo /path/to/repo
 ```
+
+Navigation is URL-based, like ungit: one server handles **any repository on the machine**. `#/repository?path=/abs/path` is the canonical, shareable address of a repo view; the bare URL is a home screen with a path input and your recent repositories. Running the CLI inside a repo just deep-links you there.
+
+The server listens on **8449** by default. If a progit instance already owns the port, a second `progit` invocation doesn't start another server — it opens a browser tab on the running one, pointed at the repo you invoked it from. If the port is held by some other program, it exits with an error (use `--port`).
 
 ## Development
 
@@ -44,20 +48,22 @@ scripts/make-fixture.sh [dir]   # fabricate a gnarly repo (octopus merge, rename
 Browser-driven verification (needs Chrome):
 
 ```sh
-node scripts/verify-ui.mjs http://localhost:3499/ dirty   # drawer, staging, hover, error toasts
-node scripts/verify-ui.mjs http://localhost:3498/ clean   # checkout re-lane, create refs, keyboard
-node scripts/verify-live.mjs http://localhost:3499/ /path/to/repo   # SSE + worktree peek
+# pass the full repo URL (hash route included)
+node scripts/verify-ui.mjs 'http://localhost:3499/#/repository?path=%2Ftmp%2Fprogit-fixture' dirty
+node scripts/verify-ui.mjs 'http://localhost:3499/#/repository?path=%2Ftmp%2Fprogit-clean' clean
+node scripts/verify-live.mjs 'http://localhost:3499/#/repository?path=%2Ftmp%2Fprogit-fixture' /tmp/progit-fixture
+node scripts/verify-remote.mjs 'http://localhost:3499/#/repository?path=%2Ftmp%2Fprogit-fixture' /tmp/progit-fixture  # push/fetch/pull + credential modal
 ```
 
 ## Architecture
 
 Single package, two halves sharing `src/shared/types.ts`:
 
-- **Server** (`src/server/`) — Hono on Node. Every endpoint shells out to `git` via `execFile` (arg arrays only, validated ref names, paths after `--`). Parsers for `log` (`%x1f`/`%x1e` format strings), `for-each-ref`, `status --porcelain=v2 -z`, `worktree list --porcelain`, and unified diff output live in `src/server/parse/`. A chokidar watcher debounces git-dir + working-tree events into one SSE stream (`/api/events`).
+- **Server** (`src/server/`) — Hono on Node, repo-agnostic: every API call carries `?path=`, and a registry (`src/server/repos.ts`) lazily resolves each path to its repo root, caching a git runner + filesystem watcher per repo. Every endpoint shells out to `git` via `execFile` (arg arrays only, validated ref names, paths after `--`). Parsers for `log` (`%x1f`/`%x1e` format strings), `for-each-ref`, `status --porcelain=v2 -z`, `worktree list --porcelain`, and unified diff output live in `src/server/parse/`. A chokidar watcher per repo debounces git-dir + working-tree events into one SSE stream (`/api/events?path=`).
 - **Client** (`src/client/`) — React 19 + Vite + TanStack Query. SSE events invalidate queries by scope. The lane engine (`src/client/graph/lanes.ts`) re-lanes the graph client-side on every checkout: the current branch's first-parent chain is column 0, other branches fan out ordered by fork depth; branch colors are a stable name hash so they survive re-lanes and restarts. Per-commit `+/-` stats load progressively (`/api/log/stats`) because `--numstat` costs 10–20× the log itself on large repos.
 
 The UI is a faithful port of the **Ungit Redesign v3** prototype in `design-ref/` (see its README); the design CSS is used nearly verbatim (`src/client/styles/`).
 
 ## Roadmap (M2)
 
-Push / fetch / pull, merge, rebase, cherry-pick, revert, branch delete, stash management, and drag-a-ref-onto-a-node interactions. The corresponding menu items are visible but disabled with an "M2" hint.
+Merge and rebase (with conflict continue/abort), cherry-pick, revert, reset, branch/tag delete, discard/patch-level staging, stash management, remotes/submodules, and drag-a-ref-onto-a-node interactions. The corresponding menu items are visible but disabled with an "M2" hint.

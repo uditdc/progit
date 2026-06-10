@@ -17,7 +17,7 @@
     "dev": "concurrently -k -n server,client \"tsx watch src/server/cli.ts --port 3411 --no-open\" \"vite\"",
     "dev:server": "tsx watch src/server/cli.ts --port 3411 --no-open",
     "dev:client": "vite",
-    "build": "vite build && tsup",
+    "build": "vite build && tsup && cp src/server/askpass.cjs dist/server/",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
   },

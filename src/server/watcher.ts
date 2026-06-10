@@ -2,19 +2,21 @@ import { watch, type FSWatcher } from 'chokidar';
 import { readFileSync, existsSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import ignore from 'ignore';
-import type { ChangeEvent, ChangeScope } from '../shared/types.js';
+import type { BusEvent, ChangeEvent, ChangeScope } from '../shared/types.js';
 import type { GitRunner } from './git.js';
 
 export interface ChangeBus {
-  subscribe(fn: (e: ChangeEvent) => void): () => void;
+  subscribe(fn: (e: BusEvent) => void): () => void;
   emit(scope: ChangeScope): void;
+  /** Push a non-change event (e.g. a credential request) to subscribers immediately. */
+  publish(e: BusEvent): void;
   close(): Promise<void>;
 }
 
 const DEBOUNCE_MS = 300;
 
 export async function createWatcher(git: GitRunner): Promise<ChangeBus> {
-  const subscribers = new Set<(e: ChangeEvent) => void>();
+  const subscribers = new Set<(e: BusEvent) => void>();
   let pending: Set<ChangeScope> = new Set();
   let timer: NodeJS.Timeout | null = null;
 
@@ -90,6 +92,9 @@ export async function createWatcher(git: GitRunner): Promise<ChangeBus> {
       return () => subscribers.delete(fn);
     },
     emit,
+    publish(e) {
+      for (const fn of subscribers) fn(e);
+    },
     async close() {
       if (timer) clearTimeout(timer);
       await Promise.all([gitWatcher.close(), wtWatcher.close()]);

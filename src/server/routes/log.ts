@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import type { AppContext } from '../app.js';
+import type { GitRunner } from '../git.js';
 import { LOG_FORMAT, parseLog, parseLogStats } from '../parse/log.js';
 import { parseRefs, REFS_FORMAT } from '../parse/refs.js';
 import type { LogPayload, RefsPayload } from '../../shared/types.js';
@@ -10,18 +11,19 @@ function clampLimit(raw: string | undefined): number {
 
 const LOG_SCOPE = ['--branches', '--remotes', '--tags', 'HEAD'];
 
+const hasHead = async (git: GitRunner) =>
+  (await git.read(['rev-parse', '-q', '--verify', 'HEAD'], { okCodes: [0, 1] })).trim() !== '';
+
 export function logRoutes(ctx: AppContext) {
   const r = new Hono();
 
-  const hasHead = async () =>
-    (await ctx.git.read(['rev-parse', '-q', '--verify', 'HEAD'], { okCodes: [0, 1] })).trim() !== '';
-
   r.get('/log', async (c) => {
+    const { git } = await ctx.repo(c);
     const limit = clampLimit(c.req.query('limit'));
-    if (!(await hasHead())) {
+    if (!(await hasHead(git))) {
       return c.json({ commits: [], hasMore: false } satisfies LogPayload);
     }
-    const out = await ctx.git.read([
+    const out = await git.read([
       'log',
       '--topo-order',
       `--max-count=${limit + 1}`,
@@ -35,9 +37,10 @@ export function logRoutes(ctx: AppContext) {
 
   // per-commit +/- totals, fetched separately — numstat costs ~10-20x the log itself
   r.get('/log/stats', async (c) => {
+    const { git } = await ctx.repo(c);
     const limit = clampLimit(c.req.query('limit'));
-    if (!(await hasHead())) return c.json({});
-    const out = await ctx.git.read([
+    if (!(await hasHead(git))) return c.json({});
+    const out = await git.read([
       'log',
       '--topo-order',
       `--max-count=${limit}`,
@@ -49,7 +52,8 @@ export function logRoutes(ctx: AppContext) {
   });
 
   r.get('/refs', async (c) => {
-    const out = await ctx.git.read([
+    const { git } = await ctx.repo(c);
+    const out = await git.read([
       'for-each-ref',
       `--format=${REFS_FORMAT}`,
       '--sort=-committerdate',
@@ -59,7 +63,7 @@ export function logRoutes(ctx: AppContext) {
     ]);
     const payload: RefsPayload = parseRefs(out);
     if (!payload.local.some((b) => b.current)) {
-      const head = (await ctx.git.read(['rev-parse', '-q', '--verify', 'HEAD'], { okCodes: [0, 1] })).trim();
+      const head = (await git.read(['rev-parse', '-q', '--verify', 'HEAD'], { okCodes: [0, 1] })).trim();
       if (head) payload.detachedHead = head;
     }
     return c.json(payload);

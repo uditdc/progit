@@ -1,46 +1,59 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { api } from './client';
+import type {
+  CheckoutBody,
+  CommitBody,
+  CreateBranchBody,
+  CreateTagBody,
+  FetchBody,
+  PushBody,
+  StagePathsBody,
+} from '../../shared/types';
 
-export function useRepo() {
-  return useQuery({ queryKey: ['repo'], queryFn: api.repo });
+export function useRepo(path: string) {
+  return useQuery({ queryKey: ['repo', path], queryFn: () => api.repo(path), retry: false });
 }
 
-export function useLog(limit: number) {
-  return useQuery({ queryKey: ['log', limit], queryFn: () => api.log(limit), placeholderData: (prev) => prev });
-}
-
-export function useLogStats(limit: number) {
+export function useLog(path: string, limit: number) {
   return useQuery({
-    queryKey: ['log', 'stats', limit],
-    queryFn: () => api.logStats(limit),
+    queryKey: ['log', path, 'list', limit],
+    queryFn: () => api.log(path, limit),
     placeholderData: (prev) => prev,
   });
 }
 
-export function useRefs() {
-  return useQuery({ queryKey: ['refs'], queryFn: api.refs });
-}
-
-export function useStatus() {
-  return useQuery({ queryKey: ['status'], queryFn: () => api.status() });
-}
-
-export function useWorktrees() {
-  return useQuery({ queryKey: ['worktrees'], queryFn: api.worktrees });
-}
-
-export function useCommitDiff(sha: string | null) {
+export function useLogStats(path: string, limit: number) {
   return useQuery({
-    queryKey: ['diff', 'commit', sha],
-    queryFn: () => api.commitDiff(sha!),
+    queryKey: ['log', path, 'stats', limit],
+    queryFn: () => api.logStats(path, limit),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useRefs(path: string) {
+  return useQuery({ queryKey: ['refs', path], queryFn: () => api.refs(path) });
+}
+
+export function useStatus(path: string) {
+  return useQuery({ queryKey: ['status', path], queryFn: () => api.status(path) });
+}
+
+export function useWorktrees(path: string) {
+  return useQuery({ queryKey: ['worktrees', path], queryFn: () => api.worktrees(path) });
+}
+
+export function useCommitDiff(path: string, sha: string | null) {
+  return useQuery({
+    queryKey: ['diff', path, 'commit', sha],
+    queryFn: () => api.commitDiff(path, sha!),
     enabled: sha !== null,
   });
 }
 
-export function useWorkingDiff(enabled: boolean, worktree?: string) {
+export function useWorkingDiff(path: string, enabled: boolean, worktree?: string) {
   return useQuery({
-    queryKey: ['diff', 'working', worktree ?? null],
-    queryFn: () => api.workingDiff(worktree),
+    queryKey: ['diff', path, 'working', worktree ?? null],
+    queryFn: () => api.workingDiff(path, worktree),
     enabled,
   });
 }
@@ -64,20 +77,32 @@ function useGitMutation<TArgs>(
   });
 }
 
-export function useGitActions(cb: MutationCallbacks) {
-  const checkout = useGitMutation(api.checkout, (a) => `Checked out ${a.ref}`, cb);
+export function useGitActions(path: string, cb: MutationCallbacks) {
+  const checkout = useGitMutation((b: CheckoutBody) => api.checkout(path, b), (a) => `Checked out ${a.ref}`, cb);
   const createBranch = useGitMutation(
-    api.createBranch,
+    (b: CreateBranchBody) => api.createBranch(path, b),
     (a) => `Created branch ${a.name}${a.checkout ? ' · checked out' : ''}`,
     cb,
   );
-  const createTag = useGitMutation(api.createTag, (a) => `Created tag ${a.name}`, cb);
-  const stage = useGitMutation(api.stage, (a) => (a.paths.length > 1 ? `Staged ${a.paths.length} files` : `Staged ${a.paths[0]}`), cb);
+  const createTag = useGitMutation((b: CreateTagBody) => api.createTag(path, b), (a) => `Created tag ${a.name}`, cb);
+  const stage = useGitMutation(
+    (b: StagePathsBody) => api.stage(path, b),
+    (a) => (a.paths.length > 1 ? `Staged ${a.paths.length} files` : `Staged ${a.paths[0]}`),
+    cb,
+  );
   const unstage = useGitMutation(
-    api.unstage,
+    (b: StagePathsBody) => api.unstage(path, b),
     (a) => (a.paths.length > 1 ? `Unstaged ${a.paths.length} files` : `Unstaged ${a.paths[0]}`),
     cb,
   );
-  const commit = useGitMutation(api.commit, () => 'Committed staged changes', cb);
-  return { checkout, createBranch, createTag, stage, unstage, commit };
+  const commit = useGitMutation((b: CommitBody) => api.commit(path, b), () => 'Committed staged changes', cb);
+  const uncommit = useGitMutation((_b: void) => api.uncommit(path), () => 'Uncommitted — changes kept staged', cb);
+  const fetchRemote = useGitMutation(
+    (b: FetchBody) => api.fetchRemote(path, b),
+    (a) => `Fetched ${a.remote ?? 'all remotes'}`,
+    cb,
+  );
+  const push = useGitMutation((b: PushBody) => api.push(path, b), (a) => `Pushed ${a.ref ?? 'current branch'}`, cb);
+  const pull = useGitMutation((_b: void) => api.pull(path), () => 'Pulled', cb);
+  return { checkout, createBranch, createTag, stage, unstage, commit, uncommit, fetchRemote, push, pull };
 }

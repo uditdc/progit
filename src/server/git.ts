@@ -14,15 +14,23 @@ export class GitError extends Error {
   }
 }
 
+export interface GitExecOpts {
+  cwd?: string;
+  okCodes?: number[];
+  stdin?: string;
+  /** Extra environment (e.g. GIT_ASKPASS bridge for remote operations). */
+  env?: Record<string, string>;
+}
+
 export interface GitRunner {
   /** Read-only command; runs concurrently. */
-  read(args: string[], opts?: { cwd?: string; okCodes?: number[]; stdin?: string }): Promise<string>;
+  read(args: string[], opts?: GitExecOpts): Promise<string>;
   /** Mutating command; serialized through a queue to avoid index.lock races. */
-  write(args: string[], opts?: { cwd?: string; stdin?: string }): Promise<string>;
+  write(args: string[], opts?: Omit<GitExecOpts, 'okCodes'>): Promise<string>;
   readonly root: string;
 }
 
-function run(args: string[], cwd: string, okCodes: number[], stdin?: string): Promise<string> {
+function run(args: string[], cwd: string, okCodes: number[], stdin?: string, env?: Record<string, string>): Promise<string> {
   return new Promise((resolve, reject) => {
     const child = execFile(
       'git',
@@ -30,7 +38,7 @@ function run(args: string[], cwd: string, okCodes: number[], stdin?: string): Pr
       {
         cwd,
         maxBuffer: MAX_BUFFER,
-        env: { ...process.env, GIT_OPTIONAL_LOCKS: '0', LC_ALL: 'C' },
+        env: { ...process.env, GIT_OPTIONAL_LOCKS: '0', LC_ALL: 'C', ...env },
       },
       (err, stdout, stderr) => {
         if (err) {
@@ -55,12 +63,12 @@ export function createGit(root: string): GitRunner {
   return {
     root,
     read(args, opts = {}) {
-      return run(args, opts.cwd ?? root, opts.okCodes ?? [0], opts.stdin);
+      return run(args, opts.cwd ?? root, opts.okCodes ?? [0], opts.stdin, opts.env);
     },
     write(args, opts = {}) {
       const next = writeChain.then(
-        () => run(args, opts.cwd ?? root, [0], opts.stdin),
-        () => run(args, opts.cwd ?? root, [0], opts.stdin),
+        () => run(args, opts.cwd ?? root, [0], opts.stdin, opts.env),
+        () => run(args, opts.cwd ?? root, [0], opts.stdin, opts.env),
       );
       writeChain = next.catch(() => {});
       return next;
