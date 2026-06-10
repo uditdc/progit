@@ -175,7 +175,9 @@ export interface StagePathsBody {
 }
 
 export interface CommitBody {
+  /** May be empty when amending — the previous message is kept. */
   message: string;
+  amend?: boolean;
 }
 
 export interface FetchBody {

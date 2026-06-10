@@ -401,8 +401,8 @@ export function TreeGraph({
                     </span>
                   </span>
                   <span className="spacer" />
-                  <span className="when">now</span>
-                  <span className="sha">·····</span>
+                  {/* <span className="when">now</span> */}
+                  {/* <span className="sha">·····</span> */}
                 </div>
               </div>
             </div>
@@ -458,7 +458,7 @@ export function TreeGraph({
                       </span>
                     )}
                     <span className="when">{relativeTime(c.date)}</span>
-                    <span className="sha">{c.shortHash}</span>
+                    {/* <span className="sha">{c.shortHash}</span> */}
                   </div>
                 </div>
                 {it.refs && (

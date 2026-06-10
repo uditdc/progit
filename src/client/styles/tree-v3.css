@@ -64,10 +64,10 @@
 .rail-more { margin-left: auto; flex-shrink: 0; }
 
 /* ---------- tree canvas ---------- */
-.v3-stage { flex: 1; min-height: 0; position: relative; overflow: hidden; }
+.v3-stage { flex: 1; min-height: 0; display: flex; overflow: hidden; }
+.stage-tree { flex: 1; min-width: 0; position: relative; overflow: hidden; }
 .tree-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; }
 .tree-wrap { max-width: 940px; margin: 0 auto; padding: 22px 28px 80px; transition: margin .32s cubic-bezier(.4,0,.2,1), max-width .32s cubic-bezier(.4,0,.2,1); }
-.v3.drawer-open .tree-wrap { }
 
 .tree-inner { position: relative; }
 .tree-svg { position: absolute; top: 0; left: 0; pointer-events: none; }
@@ -82,7 +82,6 @@
   transition: opacity .2s;
 }
 .trow .rowbg { position: absolute; left: 0; right: 0; top: 4px; bottom: 4px; border-radius: 10px; transition: background .12s; }
-.trow:hover .rowbg { background: color-mix(in oklch, var(--bg-2) 55%, transparent); }
 .trow.sel .rowbg { background: var(--accent-dim); box-shadow: inset 0 0 0 1px var(--accent-line); }
 .trow.dim { opacity: .26; }
 .trow-main { position: relative; display: flex; align-items: center; height: 52px; }
@@ -144,27 +143,33 @@
 .tree-hint { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); display: flex; align-items: center; gap: 14px; font-size: 11.5px; color: var(--tx-lo); font-family: var(--mono); pointer-events: none; background: color-mix(in oklch, var(--bg-0) 82%, transparent); backdrop-filter: blur(6px); border: 1px solid var(--line-soft); border-radius: 999px; padding: 7px 16px; box-shadow: var(--shadow); }
 .tree-hint .k { border: 1px solid var(--line); border-radius: 4px; padding: 1px 6px; color: var(--tx-mid); }
 
-/* ---------- diff drawer (overlay, dismissible — not a fixed panel) ---------- */
-.drawer {
-  position: absolute; top: 0; right: 0; bottom: 0;
-  width: min(680px, 56vw);
+/* ---------- diff panel (permanent right column) ---------- */
+.diff-panel {
+  position: relative; flex-shrink: 0;
+  width: 40%; min-width: 420px;
   background: var(--bg-1);
   border-left: 1px solid var(--line);
-  box-shadow: -24px 0 60px -20px rgba(0,0,0,.55);
-  z-index: 45; display: flex; flex-direction: column;
-  opacity: 1;
+  display: flex; flex-direction: column;
 }
-@media (prefers-reduced-motion: no-preference) {
-  .drawer { animation: drawerIn .26s cubic-bezier(.4,0,.2,1); }
-}
-@keyframes drawerIn { from { transform: translateX(34px); } to { transform: translateX(0); } }
-.drawer .detail-head { border-bottom: 1px solid var(--line); }
+.diff-panel .detail-head { border-bottom: 1px solid var(--line); }
 .drawer-resize { position: absolute; left: -3px; top: 0; bottom: 0; width: 7px; cursor: col-resize; z-index: 6; }
 .drawer-resize:hover, .drawer-resize.dragging { background: linear-gradient(to right, transparent 0, var(--accent-line) 3px, var(--accent-line) 4px, transparent 4px); }
-.drawer .drawer-close { position: absolute; top: 13px; right: 13px; z-index: 5; width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; background: var(--bg-2); border: 1px solid var(--line); color: var(--tx-mid); cursor: pointer; }
-.drawer .drawer-close:hover { background: var(--bg-3); color: var(--tx-hi); }
-.drawer .detail-body { flex: 1; }
+.diff-panel .drawer-close { position: absolute; top: 13px; right: 13px; z-index: 5; width: 26px; height: 26px; border-radius: 6px; display: grid; place-items: center; background: var(--bg-2); border: 1px solid var(--line); color: var(--tx-mid); cursor: pointer; }
+.diff-panel .drawer-close:hover { background: var(--bg-3); color: var(--tx-hi); }
+.diff-panel .detail-body { flex: 1; }
 .dh-top { padding-right: 34px; }
+
+/* ---------- commit form (working-tree head) ---------- */
+.commit-form { display: flex; flex-direction: column; gap: 8px; margin-top: 11px; }
+.commit-form .tin {
+  background: var(--bg-inset); border: 1px solid var(--line); border-radius: 9px;
+  color: var(--tx-hi); font: inherit; font-size: 12.5px; padding: 0 11px; height: 32px; outline: none;
+}
+.commit-form .tin::placeholder { color: var(--tx-lo); }
+.commit-form .tin:focus { border-color: var(--accent-line); box-shadow: 0 0 0 3px var(--accent-dim); }
+.commit-form textarea.tin { height: auto; min-height: 52px; padding: 8px 11px; resize: vertical; line-height: 1.45; }
+.commit-form .cf-row { display: flex; align-items: center; gap: 9px; }
+.cbx.sm { width: 15px; height: 15px; border-radius: 4px; cursor: pointer; flex-shrink: 0; }
 
 /* ---------- home (open / recent repositories) ---------- */
 .home-stage { flex: 1; min-height: 0; display: grid; place-items: center; padding: 24px; overflow-y: auto; }

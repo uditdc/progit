@@ -103,7 +103,9 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   const [branchMenu, setBranchMenu] = React.useState<{ x: number; y: number; ref: ViewRef } | null>(null);
   const [toast, setToast] = React.useState<ToastState | null>(null);
   const [dialog, setDialog] = React.useState<{ kind: 'branch' | 'tag'; baseId: string | null } | null>(null);
-  const [commitMsg, setCommitMsg] = React.useState('');
+  const [commitTitle, setCommitTitle] = React.useState('');
+  const [commitBody, setCommitBody] = React.useState('');
+  const [amend, setAmend] = React.useState(false);
 
   const [drawerW, setDrawerW] = React.useState<number>(() => Number(localStorage.getItem('progit_drawer_w')) || 0);
   const [resizing, setResizing] = React.useState(false);
@@ -180,8 +182,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   const peekObj = peekWt ? worktrees.find((w) => w.path === peekWt) ?? null : null;
   const selectedSha = selected && selected !== '__wd__' ? selected : null;
   const commitDiffQ = useCommitDiff(repoPath, selectedSha);
-  const wantWorking = selected === '__wd__';
-  const workingDiffQ = useWorkingDiff(repoPath, wantWorking || peekObj !== null, peekObj?.path);
+  const workingDiffQ = useWorkingDiff(repoPath, hasUncommitted || peekObj !== null, peekObj?.path);
 
   const selectCommit = React.useCallback((id: string) => {
     setSelected(id);
@@ -236,9 +237,22 @@ export function RepoView({ repoPath }: { repoPath: string }) {
     if (staged) actions.unstage.mutate({ paths: files.flatMap(unstagePaths) });
     else actions.stage.mutate({ paths: files.flatMap(stagePaths) });
   };
+  const stagedCount = workingDiffQ.data?.staged.length ?? 0;
+  const canCommit = amend ? !actions.commit.isPending : Boolean(stagedCount && commitTitle.trim());
   const doCommit = () => {
-    if (!commitMsg.trim()) return;
-    actions.commit.mutate({ message: commitMsg }, { onSuccess: () => setCommitMsg('') });
+    if (!canCommit) return;
+    const title = commitTitle.trim();
+    const body = commitBody.trim();
+    actions.commit.mutate(
+      { message: body ? `${title}\n\n${body}` : title, amend },
+      {
+        onSuccess: () => {
+          setCommitTitle('');
+          setCommitBody('');
+          setAmend(false);
+        },
+      },
+    );
   };
 
   const answerCredential = (value: string) => {
@@ -275,41 +289,33 @@ export function RepoView({ repoPath }: { repoPath: string }) {
     return () => window.removeEventListener('keydown', h);
   }, [selected, laned, selectCommit, closeDrawer]);
 
-  // ---- build detail ----
+  // ---- build detail (the diff panel is permanent — working diff is the default) ----
   type Detail =
     | { kind: 'commit'; commit: LanedCommit; groups: DiffGroup[] }
     | { kind: 'wd'; groups: DiffGroup[] }
-    | { kind: 'peek'; wt: Worktree; groups: DiffGroup[] };
-  let detail: Detail | null = null;
+    | { kind: 'peek'; wt: Worktree; groups: DiffGroup[] }
+    | { kind: 'empty' };
+  const wdGroups = (): DiffGroup[] => {
+    const d = workingDiffQ.data;
+    if (!d) return [];
+    return [
+      d.staged.length ? { label: 'Staged', files: d.staged, staged: true } : null,
+      d.unstaged.length ? { label: 'Changes', files: d.unstaged, staged: false } : null,
+      d.untracked.length ? { label: 'Untracked', files: d.untracked, staged: false } : null,
+    ].filter(Boolean) as DiffGroup[];
+  };
+  const selectedCommit = selectedSha ? lanedById.get(selectedSha) : undefined;
+  let detail: Detail;
   if (peekObj) {
-    const d = workingDiffQ.data;
-    const groups: DiffGroup[] = d
-      ? ([
-          d.staged.length ? { label: 'Staged', files: d.staged, staged: true } : null,
-          d.unstaged.length ? { label: 'Changes', files: d.unstaged, staged: false } : null,
-          d.untracked.length ? { label: 'Untracked', files: d.untracked, staged: false } : null,
-        ].filter(Boolean) as DiffGroup[])
-      : [];
-    detail = { kind: 'peek', wt: peekObj, groups };
-  } else if (selected === '__wd__') {
-    const d = workingDiffQ.data;
-    const groups: DiffGroup[] = d
-      ? ([
-          d.staged.length ? { label: 'Staged', files: d.staged, staged: true } : null,
-          d.unstaged.length ? { label: 'Changes', files: d.unstaged, staged: false } : null,
-          d.untracked.length ? { label: 'Untracked', files: d.untracked, staged: false } : null,
-        ].filter(Boolean) as DiffGroup[])
-      : [];
-    detail = { kind: 'wd', groups };
-  } else if (selectedSha) {
-    const c = lanedById.get(selectedSha);
-    if (c) {
-      const files = commitDiffQ.data?.sha === selectedSha ? commitDiffQ.data.files : [];
-      detail = { kind: 'commit', commit: c, groups: [{ label: null, files, staged: false }] };
-    }
+    detail = { kind: 'peek', wt: peekObj, groups: wdGroups() };
+  } else if (selectedCommit) {
+    const files = commitDiffQ.data?.sha === selectedCommit.id ? commitDiffQ.data.files : [];
+    detail = { kind: 'commit', commit: selectedCommit, groups: [{ label: null, files, staged: false }] };
+  } else if (hasUncommitted) {
+    detail = { kind: 'wd', groups: wdGroups() };
+  } else {
+    detail = { kind: 'empty' };
   }
-
-  const stagedCount = workingDiffQ.data?.staged.length ?? 0;
 
   // ---- menus ----
   const buildCommitActions = (c: LanedCommit): MenuAction[] => [
@@ -394,7 +400,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   }
 
   return (
-    <div className={'v3' + (detail ? ' drawer-open' : '')}>
+    <div className="v3">
       {/* ---------- floating top bar ---------- */}
       <div className="v3-top">
         <div className="v3-brand" style={{ cursor: 'pointer' }} onClick={navigateHome} title="All repositories">
@@ -628,62 +634,65 @@ export function RepoView({ repoPath }: { repoPath: string }) {
         </div>
       </div>
 
-      {/* ---------- tree stage ---------- */}
+      {/* ---------- tree stage + permanent diff panel ---------- */}
       <div className="v3-stage">
-        <TreeGraph
-          commits={laned}
-          selected={selected}
-          onSelect={selectCommit}
-          hiliteSet={ancestry}
-          hiliteLane={ancestry ? activeLane : null}
-          collapseFocus={settings.collapse}
-          focusTipId={focusTipId}
-          wdParentId={focusTipId}
-          onContext={(e, c) => {
-            setBranchMenu(null);
-            setCtx({ x: e.clientX, y: e.clientY, c });
-          }}
-          onBranchMenu={(e, r) => {
-            setCtx(null);
-            setBranchMenu({ x: e.clientX, y: e.clientY, ref: r });
-          }}
-          hasUncommitted={hasUncommitted}
-          wdCount={wdCount}
-          hasMore={logQ.data?.hasMore ?? false}
-          onLoadMore={() => setLimit((l) => l + LOG_PAGE)}
-        />
+        <div className="stage-tree">
+          <TreeGraph
+            commits={laned}
+            selected={selected}
+            onSelect={selectCommit}
+            hiliteSet={ancestry}
+            hiliteLane={ancestry ? activeLane : null}
+            collapseFocus={settings.collapse}
+            focusTipId={focusTipId}
+            wdParentId={focusTipId}
+            onContext={(e, c) => {
+              setBranchMenu(null);
+              setCtx({ x: e.clientX, y: e.clientY, c });
+            }}
+            onBranchMenu={(e, r) => {
+              setCtx(null);
+              setBranchMenu({ x: e.clientX, y: e.clientY, ref: r });
+            }}
+            hasUncommitted={hasUncommitted}
+            wdCount={wdCount}
+            hasMore={logQ.data?.hasMore ?? false}
+            onLoadMore={() => setLimit((l) => l + LOG_PAGE)}
+          />
 
-        {laned.length === 0 && !logQ.isLoading && (
-          <div className="detail-empty" style={{ position: 'absolute', inset: 0 }}>
-            <div>
-              <div className="big">∅</div>
-              No commits yet{hasUncommitted ? ' — stage and commit your changes via the working tree row' : ''}
+          {laned.length === 0 && !logQ.isLoading && (
+            <div className="detail-empty" style={{ position: 'absolute', inset: 0 }}>
+              <div>
+                <div className="big">∅</div>
+                No commits yet{hasUncommitted ? ' — stage and commit your changes via the working tree row' : ''}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {!detail && laned.length > 0 && (
-          <div className="tree-hint">
-            <span>
-              <span className="k">↑</span> <span className="k">↓</span> navigate
-            </span>
-            <span>
-              click a <b style={{ color: 'var(--tx-mid)', fontWeight: 600 }}>branch pill</b> to checkout — it becomes the trunk
-            </span>
-            <span>
-              <span className="k">click</span> a commit for the diff
-            </span>
-          </div>
-        )}
+          {!selected && !peekObj && laned.length > 0 && (
+            <div className="tree-hint">
+              <span>
+                <span className="k">↑</span> <span className="k">↓</span> navigate
+              </span>
+              <span>
+                click a <b style={{ color: 'var(--tx-mid)', fontWeight: 600 }}>branch pill</b> to checkout — it becomes the trunk
+              </span>
+              <span>
+                <span className="k">click</span> a commit for the diff
+              </span>
+            </div>
+          )}
+        </div>
 
-        {/* ---------- diff drawer (overlay) ---------- */}
-        {detail && (
-          <div className="drawer" style={{ width: drawerW || undefined }}>
-            <div className={'drawer-resize' + (resizing ? ' dragging' : '')} onMouseDown={startResize} />
+        {/* ---------- diff panel ---------- */}
+        <div className="diff-panel" style={{ width: drawerW || undefined }}>
+          <div className={'drawer-resize' + (resizing ? ' dragging' : '')} onMouseDown={startResize} />
+          {(detail.kind === 'commit' || detail.kind === 'peek') && (
             <button className="drawer-close" onClick={closeDrawer}>
               ✕
             </button>
-            {detail.kind === 'commit' && (
+          )}
+          {detail.kind === 'commit' && (
               <div className="detail-head">
                 <div className="dh-top">
                   <span className="dh-avatar" style={{ background: avatarColor(detail.commit.email) }}>
@@ -717,25 +726,47 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                     uncommitted on <b style={{ color: 'var(--tx)' }}>{currentLabel}</b>
                   </span>
                 </div>
-                <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
+                <div className="commit-form">
                   <input
                     className="tin"
-                    style={{ flex: 1, height: 32 }}
-                    placeholder={stagedCount ? `Commit message for ${stagedCount} staged file${stagedCount === 1 ? '' : 's'}…` : 'Stage files to commit…'}
-                    value={commitMsg}
-                    onChange={(e) => setCommitMsg(e.target.value)}
+                    placeholder={
+                      amend
+                        ? 'New title (empty keeps the previous message)…'
+                        : stagedCount
+                          ? `Title — committing ${stagedCount} staged file${stagedCount === 1 ? '' : 's'}…`
+                          : 'Title — check files below to stage them…'
+                    }
+                    value={commitTitle}
+                    onChange={(e) => setCommitTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') doCommit();
+                    }}
+                  />
+                  <textarea
+                    className="tin"
+                    rows={3}
+                    placeholder="Description (optional)…"
+                    value={commitBody}
+                    onChange={(e) => setCommitBody(e.target.value)}
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) doCommit();
                     }}
                   />
-                  <button
-                    className="tb-btn primary"
-                    disabled={!stagedCount || !commitMsg.trim()}
-                    style={{ opacity: stagedCount && commitMsg.trim() ? 1 : 0.45, height: 32 }}
-                    onClick={doCommit}
-                  >
-                    <Icon name="check" size={13} /> Commit
-                  </button>
+                  <div className="cf-row">
+                    <label className="chk" style={{ margin: 0 }} onClick={() => setAmend((v) => !v)}>
+                      <span className={'cbx sm' + (amend ? ' on' : '')}>{amend && <Icon name="check" size={10} />}</span>
+                      Append to last commit
+                    </label>
+                    <span style={{ flex: 1 }} />
+                    <button
+                      className="tb-btn primary"
+                      disabled={!canCommit}
+                      style={{ opacity: canCommit ? 1 : 0.45, height: 32 }}
+                      onClick={doCommit}
+                    >
+                      <Icon name="check" size={13} /> {amend ? 'Amend' : 'Commit'}
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -761,6 +792,15 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                 </div>
               </div>
             )}
+          {detail.kind === 'empty' ? (
+            <div className="detail-empty">
+              <div>
+                <div className="big">∅</div>
+                No uncommitted changes
+                <div style={{ marginTop: 6, fontSize: 12, color: 'var(--tx-lo)' }}>Select a commit to view its diff</div>
+              </div>
+            </div>
+          ) : (
             <DiffViewer
               key={detail.kind === 'commit' ? detail.commit.id : detail.kind === 'peek' ? 'peek:' + detail.wt.path : '__wd__'}
               groups={detail.groups}
@@ -769,8 +809,8 @@ export function RepoView({ repoPath }: { repoPath: string }) {
               onStage={detail.kind === 'wd' ? onStage : undefined}
               onStageAll={detail.kind === 'wd' ? onStageAll : undefined}
             />
-          </div>
-        )}
+          )}
+        </div>
       </div>
 
       {/* ---------- commit context menu ---------- */}

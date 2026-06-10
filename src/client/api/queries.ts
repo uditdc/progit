@@ -95,7 +95,11 @@ export function useGitActions(path: string, cb: MutationCallbacks) {
     (a) => (a.paths.length > 1 ? `Unstaged ${a.paths.length} files` : `Unstaged ${a.paths[0]}`),
     cb,
   );
-  const commit = useGitMutation((b: CommitBody) => api.commit(path, b), () => 'Committed staged changes', cb);
+  const commit = useGitMutation(
+    (b: CommitBody) => api.commit(path, b),
+    (a) => (a.amend ? 'Amended last commit' : 'Committed staged changes'),
+    cb,
+  );
   const uncommit = useGitMutation((_b: void) => api.uncommit(path), () => 'Uncommitted — changes kept staged', cb);
   const fetchRemote = useGitMutation(
     (b: FetchBody) => api.fetchRemote(path, b),

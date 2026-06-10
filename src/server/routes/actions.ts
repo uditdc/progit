@@ -66,8 +66,14 @@ export function actionRoutes(ctx: AppContext) {
   r.post('/commit', async (c) => {
     const { git, bus } = await ctx.repo(c);
     const body = await c.req.json<CommitBody>();
-    if (!body.message || !body.message.trim()) return c.json({ error: 'Commit message is required' }, 400);
-    await git.write(['commit', '--file=-'], { stdin: body.message });
+    const hasMessage = Boolean(body.message && body.message.trim());
+    if (!hasMessage && !body.amend) return c.json({ error: 'Commit message is required' }, 400);
+    const args = ['commit', ...(body.amend ? ['--amend'] : [])];
+    if (hasMessage) {
+      await git.write([...args, '--file=-'], { stdin: body.message });
+    } else {
+      await git.write([...args, '--no-edit']);
+    }
     bus.emit('all');
     return c.json({ ok: true });
   });

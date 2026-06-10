@@ -204,6 +204,18 @@ function FileDiffView({
   return (
     <div className="diff-file">
       <div className={'diff-file-head' + (open ? '' : ' collapsed')} onClick={onToggle}>
+        {staging && onStage && (
+          <span
+            className={'cbx sm' + (staged ? ' on' : '')}
+            title={staged ? 'Exclude from commit' : 'Include in commit'}
+            onClick={(e) => {
+              e.stopPropagation();
+              onStage(file, staged);
+            }}
+          >
+            {staged && <Icon name="check" size={10} />}
+          </span>
+        )}
         <Icon name="chevron" size={13} className="chev" />
         <StatusIco status={file.status} />
         <span className="fpath">
@@ -217,17 +229,6 @@ function FileDiffView({
             <span className="d">−{file.del}</span>
             <StatBar add={file.add} del={file.del} />
           </span>
-          {staging && onStage && (
-            <button
-              className={'stage-btn' + (staged ? ' unstage' : '')}
-              onClick={(e) => {
-                e.stopPropagation();
-                onStage(file, staged);
-              }}
-            >
-              {staged ? 'Unstage' : 'Stage'}
-            </button>
-          )}
         </span>
       </div>
       {open && file.binary && (
@@ -313,6 +314,9 @@ export interface DiffViewerProps {
 export function DiffViewer({ groups, mode, staging, onStage, onStageAll }: DiffViewerProps) {
   const allFiles = groups.flatMap((g) => g.files);
   const totals = allFiles.reduce((a, f) => ({ add: a.add + f.add, del: a.del + f.del }), { add: 0, del: 0 });
+  const stagedFiles = groups.filter((g) => g.staged).flatMap((g) => g.files);
+  const unstagedFiles = groups.filter((g) => !g.staged).flatMap((g) => g.files);
+  const allStaged = allFiles.length > 0 && unstagedFiles.length === 0;
 
   // files start collapsed; keys present in the map override the default
   const [open, setOpen] = React.useState<Record<string, boolean>>({});
@@ -323,6 +327,17 @@ export function DiffViewer({ groups, mode, staging, onStage, onStageAll }: DiffV
   return (
     <>
       <div className="diff-toolbar">
+        {staging && onStageAll && allFiles.length > 0 && (
+          <label
+            className="chk"
+            style={{ margin: 0 }}
+            title={allStaged ? 'Unstage all files' : 'Stage all files'}
+            onClick={() => (allStaged ? onStageAll(stagedFiles, true) : onStageAll(unstagedFiles, false))}
+          >
+            <span className={'cbx sm' + (allStaged ? ' on' : '')}>{allStaged && <Icon name="check" size={10} />}</span>
+            <span style={{ fontSize: 11.5, color: 'var(--tx-mid)' }}>All</span>
+          </label>
+        )}
         <span className="diff-stat tnum">
           <span className="a">+{totals.add}</span>
           <span className="d">−{totals.del}</span>
@@ -350,11 +365,6 @@ export function DiffViewer({ groups, mode, staging, onStage, onStageAll }: DiffV
               <div className="files-group-label">
                 {g.label}
                 <span style={{ color: 'var(--tx-lo)' }}>· {g.files.length}</span>
-                {staging && onStageAll && g.files.length > 0 && (
-                  <button className="stage-btn" style={{ opacity: 1, marginLeft: 'auto' }} onClick={() => onStageAll(g.files, g.staged)}>
-                    {g.staged ? 'Unstage all' : 'Stage all'}
-                  </button>
-                )}
               </div>
             )}
             {g.files.map((f) => (
