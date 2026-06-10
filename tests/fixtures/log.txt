@@ -1,0 +1,103 @@
+77cc762f73f37319bcd803745dda8097841e14f851370bfe6d3ef4125de68cb5f73ccdab173d7482Ada Lovelaceada@example.com2026-06-10T16:02:33+05:30feat: unpushed two
+1	0	src/app.ts
+
+51370bfe6d3ef4125de68cb5f73ccdab173d74826691cccece48ed30d506f4c3e81dfdbbf7043b22Ada Lovelaceada@example.com2026-06-10T16:02:32+05:30feat: unpushed one
+1	0	src/app.ts
+
+6691cccece48ed30d506f4c3e81dfdbbf7043b2203e33e67f497756e271514aaa8d9d960c850e84bAda Lovelaceada@example.com2026-06-10T16:02:32+05:30chore: add binary logo
+-	-	logo.png
+
+03e33e67f497756e271514aaa8d9d960c850e84bbac9112d49be1895330d43db46801315c7d2fb47Ada Lovelaceada@example.com2026-06-10T16:02:31+05:30refactor: rename util to helpers
+0	0	src/{util.ts => helpers.ts}
+
+bac9112d49be1895330d43db46801315c7d2fb479ac80123115576c0bfd45dcefcbe50f8e0bd5dbb ffc7e89150ebd94a5e95d24199edeeaa96a2002e 07895773a9ca19c665b520f1436c266a96ad0c74Ada Lovelaceada@example.com2026-06-10T16:02:31+05:30Merge crash fix and perf work (octopus)
+07895773a9ca19c665b520f1436c266a96ad0c749ac80123115576c0bfd45dcefcbe50f8e0bd5dbbAda Lovelaceada@example.com2026-06-10T16:02:31+05:30perf: memoize id
+1	0	src/util.ts
+
+ffc7e89150ebd94a5e95d24199edeeaa96a2002e9ac80123115576c0bfd45dcefcbe50f8e0bd5dbbAda Lovelaceada@example.com2026-06-10T16:02:30+05:30fix: null crash
+1	0	src/app.ts
+
+9ac80123115576c0bfd45dcefcbe50f8e0bd5dbb31e5406f5e46990a2ee959982d72aaa2a38d2441 87fee3f7c881a79d53a095a8b1fa62c193a06b0bAda Lovelaceada@example.com2026-06-10T16:02:26+05:30Merge branch 'feature/auth'
+87fee3f7c881a79d53a095a8b1fa62c193a06b0bdce82fd5c78eeaac0c09550b0c3ff0d95fc473d8Grace Hoppergrace.hopper@example.com2026-06-10T16:02:25+05:30feat: token refresh
+1	0	src/auth/login.ts
+
+dce82fd5c78eeaac0c09550b0c3ff0d95fc473d80940949137416a4689eaeee41c1dae01277b6823Grace Hoppergrace.hopper@example.com2026-06-10T16:02:24+05:30feat: token issuing
+1	0	src/auth/token.ts
+
+0940949137416a4689eaeee41c1dae01277b6823714eab6036860f2ba73600cc28b5a423acdc564dGrace Hoppergrace.hopper@example.com2026-06-10T16:02:24+05:30feat: login flow
+1	0	src/auth/login.ts
+
+31e5406f5e46990a2ee959982d72aaa2a38d2441714eab6036860f2ba73600cc28b5a423acdc564dAda Lovelaceada@example.com2026-06-10T16:02:25+05:30chore: trunk drift
+1	0	src/app.ts
+
+714eab6036860f2ba73600cc28b5a423acdc564d53a687e02a343f2810b24643cbfea235bde0893aAda Lovelaceada@example.com2026-06-10T16:02:23+05:30chore: trunk work 12
+1	0	src/app.ts
+
+53a687e02a343f2810b24643cbfea235bde0893a3deb825b4a6cf4008f8f19a63f784cbab6cda0f4Ada Lovelaceada@example.com2026-06-10T16:02:23+05:30chore: trunk work 11
+1	0	src/app.ts
+
+98abece983546a952f9b0101efb61aa3c1b1989de2d7b05deaf06999ad5b8221814ab91720517ce7Alan Turingalan.turing@example.com2026-06-10T16:02:30+05:30feat: search step 9
+1	0	src/search/index.ts
+
+e2d7b05deaf06999ad5b8221814ab91720517ce7de6a88ea85252eb821240f0646c5dcde4c419a60Alan Turingalan.turing@example.com2026-06-10T16:02:29+05:30feat: search step 8
+1	0	src/search/index.ts
+
+de6a88ea85252eb821240f0646c5dcde4c419a60254425be569486130baa906c410acf98dc2f1a46Alan Turingalan.turing@example.com2026-06-10T16:02:29+05:30feat: search step 7
+1	0	src/search/index.ts
+
+254425be569486130baa906c410acf98dc2f1a4673322b70e6018adc40dd712eda8f01303503259eAlan Turingalan.turing@example.com2026-06-10T16:02:28+05:30feat: search step 6
+1	0	src/search/index.ts
+
+73322b70e6018adc40dd712eda8f01303503259eacfa7f238052cfe97c172cda7f744ab646ff4ea9Alan Turingalan.turing@example.com2026-06-10T16:02:28+05:30feat: search step 5
+1	0	src/search/index.ts
+
+acfa7f238052cfe97c172cda7f744ab646ff4ea9808464679b909bac6b4a70fe69614a643be14239Alan Turingalan.turing@example.com2026-06-10T16:02:27+05:30feat: search step 4
+1	0	src/search/index.ts
+
+808464679b909bac6b4a70fe69614a643be1423942f3e89d01ba99b95804fd6c9484589464fdf459Alan Turingalan.turing@example.com2026-06-10T16:02:27+05:30feat: search step 3
+1	0	src/search/index.ts
+
+42f3e89d01ba99b95804fd6c9484589464fdf459b15211eb63bf0e2978e69ca10949f9458390dc85Alan Turingalan.turing@example.com2026-06-10T16:02:27+05:30feat: search step 2
+1	0	src/search/index.ts
+
+b15211eb63bf0e2978e69ca10949f9458390dc853deb825b4a6cf4008f8f19a63f784cbab6cda0f4Alan Turingalan.turing@example.com2026-06-10T16:02:26+05:30feat: search step 1
+1	0	src/search/index.ts
+
+3deb825b4a6cf4008f8f19a63f784cbab6cda0f47a6b4d27af9cdf4934018a67a3c871c0d5d21fe7Ada Lovelaceada@example.com2026-06-10T16:02:23+05:30chore: trunk work 10
+1	0	src/app.ts
+
+7a6b4d27af9cdf4934018a67a3c871c0d5d21fe719e455cec50b6d60f7d2ee1d94f5d77b13c2d337Ada Lovelaceada@example.com2026-06-10T16:02:22+05:30chore: trunk work 9
+1	0	src/app.ts
+
+19e455cec50b6d60f7d2ee1d94f5d77b13c2d337b07302fcc2f367435efae5c6a4f7fadae5df5749Ada Lovelaceada@example.com2026-06-10T16:02:22+05:30chore: trunk work 8
+1	0	src/app.ts
+
+b07302fcc2f367435efae5c6a4f7fadae5df57497677d534467853c22cb98df8ac4dc807c8e9bb69Ada Lovelaceada@example.com2026-06-10T16:02:21+05:30chore: trunk work 7
+1	0	src/app.ts
+
+7677d534467853c22cb98df8ac4dc807c8e9bb69ff75b643cbf82484f71d128b648c41306b105b04Ada Lovelaceada@example.com2026-06-10T16:02:21+05:30chore: trunk work 6
+1	0	src/app.ts
+
+ff75b643cbf82484f71d128b648c41306b105b0434f1e05e8b7f3a0148396866bcc3acc2c82de599Ada Lovelaceada@example.com2026-06-10T16:02:20+05:30chore: trunk work 5
+1	0	src/app.ts
+
+34f1e05e8b7f3a0148396866bcc3acc2c82de599d74ab5cdeabb78711b45147ee1ec76ad95b2bcc3Ada Lovelaceada@example.com2026-06-10T16:02:20+05:30chore: trunk work 4
+1	0	src/app.ts
+
+d74ab5cdeabb78711b45147ee1ec76ad95b2bcc386b44746f7a0ffb0af5250fc9a86febc6172b69dAda Lovelaceada@example.com2026-06-10T16:02:20+05:30chore: trunk work 3
+1	0	src/app.ts
+
+86b44746f7a0ffb0af5250fc9a86febc6172b69d3b2707c7b53af801416769a43b4a15ec5b0e93c0Ada Lovelaceada@example.com2026-06-10T16:02:19+05:30chore: trunk work 2
+1	0	src/app.ts
+
+3b2707c7b53af801416769a43b4a15ec5b0e93c08dcb9adeee5227a00cf3ed87a9377543c944be07Ada Lovelaceada@example.com2026-06-10T16:02:19+05:30chore: trunk work 1
+1	0	src/app.ts
+
+8dcb9adeee5227a00cf3ed87a9377543c944be073b57c5e45313af170e3321682e4730e968d4a4bfAda Lovelaceada@example.com2026-06-10T16:02:18+05:30feat: util helpers
+1	0	src/util.ts
+
+3b57c5e45313af170e3321682e4730e968d4a4bff1882e089b90c5b997c11650c98a6a98a0713a90Ada Lovelaceada@example.com2026-06-10T16:02:18+05:30feat: app entry
+1	0	src/app.ts
+
+f1882e089b90c5b997c11650c98a6a98a0713a90Ada Lovelaceada@example.com2026-06-10T16:02:17+05:30chore: initial scaffold
+1	0	README.md

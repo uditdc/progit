@@ -1,0 +1,13 @@
+diff --git a/src/app.ts b/src/app.ts
+index f34bc7a..8a52d93 100644
+--- a/src/app.ts
++++ b/src/app.ts
+@@ -15,3 +15,4 @@ export const app = () => 'hello';
+ // crash guard
+ // ahead one
+ // ahead two
++// staged change
+diff --git a/src/auth/token.ts b/src/auth/jwt.ts
+similarity index 100%
+rename from src/auth/token.ts
+rename to src/auth/jwt.ts

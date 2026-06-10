@@ -1,0 +1,8 @@
+worktree /tmp/progit-rec
+HEAD 77cc762f73f37319bcd803745dda8097841e14f8
+branch refs/heads/main
+
+worktree /tmp/progit-rec-wt
+HEAD 98abece983546a952f9b0101efb61aa3c1b1989d
+branch refs/heads/feature/search
+

@@ -1,0 +1,57 @@
+{
+  "name": "progit",
+  "version": "0.1.0",
+  "description": "Modern web-based git visualization tool — an ungit successor",
+  "type": "module",
+  "bin": {
+    "progit": "bin/progit.js"
+  },
+  "files": [
+    "dist",
+    "bin"
+  ],
+  "engines": {
+    "node": ">=18"
+  },
+  "scripts": {
+    "dev": "concurrently -k -n server,client \"tsx watch src/server/cli.ts --port 3411 --no-open\" \"vite\"",
+    "dev:server": "tsx watch src/server/cli.ts --port 3411 --no-open",
+    "dev:client": "vite",
+    "build": "vite build && tsup",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "keywords": [
+    "git",
+    "gui",
+    "ungit",
+    "visualization"
+  ],
+  "author": "Udit",
+  "license": "MIT",
+  "packageManager": "pnpm@10.33.0",
+  "dependencies": {
+    "@hono/node-server": "^1.14.0",
+    "chokidar": "^4.0.3",
+    "hono": "^4.7.0",
+    "ignore": "^7.0.3"
+  },
+  "devDependencies": {
+    "@fontsource/ibm-plex-sans": "^5.2.0",
+    "@fontsource/jetbrains-mono": "^5.2.0",
+    "@tanstack/react-query": "^5.66.0",
+    "@types/node": "^22.13.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "playwright-core": "^1.60.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tsup": "^8.3.6",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.1.0",
+    "vitest": "^3.0.5"
+  }
+}
