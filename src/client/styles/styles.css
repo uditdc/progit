@@ -161,17 +161,8 @@ body {
 .statusbar .dot { width: 7px; height: 7px; border-radius: 50%; }
 .sb-item { display: flex; align-items: center; gap: 5px; }
 
-/* ---------- Worktree switcher (top right) ---------- */
+/* ---------- Dropdown trigger wrapper ---------- */
 .wt-switch { position: relative; }
-.wt-trigger {
-  display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 8px 0 10px;
-  background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r);
-  cursor: pointer; color: var(--tx);
-}
-.wt-trigger:hover { background: var(--bg-3); }
-.wt-trigger .wt-ico { width: 13px; height: 13px; opacity: .8; }
-.wt-trigger .lbl { font-size: 13px; color: var(--tx-hi); }
-.wt-trigger .sub { font-size: 12px; color: var(--tx-lo); }
 .wt-menu {
   position: absolute; top: 34px; right: 0; width: 320px; z-index: 60;
   background: var(--bg-2); border: 1px solid var(--line); border-radius: var(--r-lg);

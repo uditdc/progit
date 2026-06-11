@@ -99,7 +99,6 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   const [hoverBranch, setHoverBranch] = React.useState<string | null>(null);
   const [brQuery, setBrQuery] = React.useState('');
   const [brPop, setBrPop] = React.useState(false);
-  const [wtPop, setWtPop] = React.useState(false);
   const [setPop, setSetPop] = React.useState(false);
   const [ctx, setCtx] = React.useState<{ x: number; y: number; c: LanedCommit } | null>(null);
   const [branchMenu, setBranchMenu] = React.useState<{ x: number; y: number; ref: ViewRef } | null>(null);
@@ -211,7 +210,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
       setPeekWt(w.path);
       setSelected(null);
     }
-    setWtPop(false);
+    setBrPop(false);
   };
 
   const openCreate = (kind: 'branch' | 'tag', baseId: string | null) => {
@@ -272,7 +271,6 @@ export function RepoView({ repoPath }: { repoPath: string }) {
         setCtx(null);
         setDialog(null);
         setBrPop(false);
-        setWtPop(false);
         setSetPop(false);
         return;
       }
@@ -378,7 +376,14 @@ export function RepoView({ repoPath }: { repoPath: string }) {
     return { locals: fb(refs.local), remotes: fb(refs.remote), tagList: fb(refs.tags) };
   }, [refs, brQuery]);
 
-  const currentWt = worktrees.find((w) => w.current);
+  const filteredWorktrees = React.useMemo(() => {
+    const bq = brQuery.trim().toLowerCase();
+    if (!bq) return worktrees;
+    return worktrees.filter(
+      (w) => w.name.toLowerCase().includes(bq) || (w.branch ?? '').toLowerCase().includes(bq) || w.path.toLowerCase().includes(bq),
+    );
+  }, [worktrees, brQuery]);
+  const showWorktrees = worktrees.length > 1;
 
   // bad path in the URL — offer the way home
   if (repoQ.isError) {
@@ -413,7 +418,13 @@ export function RepoView({ repoPath }: { repoPath: string }) {
             <Icon name="folder" size={13} style={{ opacity: 0.6 }} /> <b style={{ color: 'var(--tx-hi)', fontWeight: 600 }}>{repo?.name ?? '…'}</b>
             <span style={{ width: 1, height: 12, background: 'var(--line)', margin: '0 2px' }} />
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: currentColor, display: 'inline-block' }} />
-            {currentLabel} <Icon name="chevron" size={12} style={{ opacity: 0.6 }} />
+            {currentLabel}
+            {peekObj && (
+              <span className="peek-tag">
+                <Icon name="eye" size={11} /> {peekObj.name}
+              </span>
+            )}
+            <Icon name="chevron" size={12} style={{ opacity: 0.6 }} />
           </button>
           <Pop
             open={brPop}
@@ -437,7 +448,12 @@ export function RepoView({ repoPath }: { repoPath: string }) {
               </button>
             </div>
             <div className="pop-search">
-              <input autoFocus placeholder="Filter branches, tags…" value={brQuery} onChange={(e) => setBrQuery(e.target.value)} />
+              <input
+                autoFocus
+                placeholder={showWorktrees ? 'Filter branches, tags, worktrees…' : 'Filter branches, tags…'}
+                value={brQuery}
+                onChange={(e) => setBrQuery(e.target.value)}
+              />
             </div>
             <div className="pop-scroll">
               {filteredRefs.locals.length > 0 && <div className="pop-sec">Local</div>}
@@ -493,9 +509,33 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                   </span>
                 </div>
               ))}
-              {filteredRefs.locals.length + filteredRefs.remotes.length + filteredRefs.tagList.length === 0 && (
-                <div style={{ padding: '14px 12px', fontSize: 13, color: 'var(--tx-lo)', textAlign: 'center' }}>No matches</div>
-              )}
+              {showWorktrees && filteredWorktrees.length > 0 && <div className="pop-sec">Worktrees</div>}
+              {showWorktrees &&
+                filteredWorktrees.map((w) => (
+                  <div
+                    key={w.path}
+                    className={'pop-row' + ((peekObj ? peekObj.path === w.path : w.current) ? ' current' : '')}
+                    onClick={() => onPeekWt(w)}
+                  >
+                    <Icon name="worktree" size={14} style={{ color: branchColor(w.branch ?? w.name) }} />
+                    <div style={{ minWidth: 0 }}>
+                      <div className="nm">
+                        {w.name}
+                        {w.current && <span className="sub"> · current</span>}
+                      </div>
+                      <div className="sub">{w.path}</div>
+                    </div>
+                    <div className="meta" style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
+                      <span className="sub">{w.branch ?? w.head.slice(0, 8)}</span>
+                      <span className={w.dirty ? 'badge-dirty' : 'badge-clean'}>{w.dirty ? `${w.dirty} dirty` : 'clean'}</span>
+                    </div>
+                  </div>
+                ))}
+              {filteredRefs.locals.length +
+                filteredRefs.remotes.length +
+                filteredRefs.tagList.length +
+                (showWorktrees ? filteredWorktrees.length : 0) ===
+                0 && <div style={{ padding: '14px 12px', fontSize: 13, color: 'var(--tx-lo)', textAlign: 'center' }}>No matches</div>}
             </div>
             <div className="pop-foot">
               <button className="pop-fbtn" onClick={() => openCreate('branch', focusTipId)}>
@@ -539,51 +579,6 @@ export function RepoView({ repoPath }: { repoPath: string }) {
             <Icon name="push" size={13} /> {actions.push.isPending ? 'Pushing…' : 'Push'}{' '}
             {status && status.ahead > 0 && <span className="cnt">↑{status.ahead}</span>}
           </button>
-          {worktrees.length > 0 && currentWt && (
-            <div className="wt-switch" onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
-              <div className="wt-trigger" onClick={() => setWtPop((v) => !v)}>
-                <Icon
-                  name="worktree"
-                  size={14}
-                  className="wt-ico"
-                  style={{ color: peekObj ? branchColor(peekObj.branch ?? peekObj.name) : 'var(--accent)' }}
-                />
-                <div style={{ display: 'flex', flexDirection: 'column', lineHeight: 1.1, alignItems: 'flex-start' }}>
-                  <span className="lbl">{peekObj ? peekObj.name : currentWt.name}</span>
-                  <span className="sub mono">{peekObj ? 'peeking' : 'worktree'}</span>
-                </div>
-                <Icon name="chevron" size={12} style={{ opacity: 0.6 }} />
-              </div>
-              <Pop open={wtPop} onClose={() => setWtPop(false)} style={{ right: 0, top: 40 }}>
-                <div className="pop-head">
-                  <span>Worktrees</span>
-                  <span style={{ textTransform: 'none', letterSpacing: 0, color: 'var(--tx-lo)' }}>peek without switching</span>
-                </div>
-                <div className="pop-scroll">
-                  {worktrees.map((w) => (
-                    <div
-                      key={w.path}
-                      className={'pop-row' + ((peekObj ? peekObj.path === w.path : w.current) ? ' current' : '')}
-                      onClick={() => onPeekWt(w)}
-                    >
-                      <Icon name="worktree" size={14} style={{ color: branchColor(w.branch ?? w.name) }} />
-                      <div style={{ minWidth: 0 }}>
-                        <div className="nm">
-                          {w.name}
-                          {w.current && <span className="sub"> · current</span>}
-                        </div>
-                        <div className="sub">{w.path}</div>
-                      </div>
-                      <div className="meta" style={{ flexDirection: 'column', alignItems: 'flex-end', gap: 2 }}>
-                        <span className="sub">{w.branch ?? w.head.slice(0, 8)}</span>
-                        <span className={w.dirty ? 'badge-dirty' : 'badge-clean'}>{w.dirty ? `${w.dirty} dirty` : 'clean'}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </Pop>
-            </div>
-          )}
           <button
             className="tb-btn"
             onClick={() => setSetting('theme', settings.theme === 'dark' ? 'light' : 'dark')}
@@ -748,7 +743,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                       if (e.key === 'Enter') doCommit();
                     }}
                   />
-                  <textarea
+                  {/* <textarea
                     className="tin"
                     rows={3}
                     placeholder="Description (optional)…"
@@ -757,7 +752,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                     onKeyDown={(e) => {
                       if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) doCommit();
                     }}
-                  />
+                  /> */}
                   <div className="cf-row">
                     <label className="chk" style={{ margin: 0 }} onClick={() => setAmend((v) => !v)}>
                       <span className={'cbx sm' + (amend ? ' on' : '')}>{amend && <Icon name="check" size={10} />}</span>
