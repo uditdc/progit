@@ -3,7 +3,7 @@
    column 0 (the spine); other branches get columns ordered by fork depth. */
 
 import type { Commit, GitRef, RefsPayload } from '../../shared/types';
-import { branchColor } from './colors';
+import { branchColor, dimColor, isMainBranch } from './colors';
 
 export type ViewRefType = 'head' | 'local' | 'remote' | 'tag';
 
@@ -30,6 +30,17 @@ export function computeLanes(
   const byId = new Map<string, Commit>();
   for (const c of commits) byId.set(c.id, c);
 
+  // ---- branches whose tip is already contained in main get a faded color ----
+  const mainRef =
+    refs.local.find((b) => isMainBranch(b.name)) ?? refs.remote.find((b) => isMainBranch(b.name));
+  const mainAncestry =
+    mainRef && byId.has(mainRef.tip) ? computeAncestry(commits, mainRef.tip) : null;
+  const laneColor = (name: string, tip: string): string => {
+    const merged =
+      !!mainAncestry && name !== currentRef && !isMainBranch(name) && mainAncestry.has(tip);
+    return merged ? dimColor(branchColor(name)) : branchColor(name);
+  };
+
   // ---- attach refs to commits by tip sha ----
   const refsByCommit = new Map<string, ViewRef[]>();
   const push = (sha: string, vr: ViewRef) => {
@@ -37,8 +48,8 @@ export function computeLanes(
     if (arr) arr.push(vr);
     else refsByCommit.set(sha, [vr]);
   };
-  for (const b of refs.local) push(b.tip, { name: b.name, type: b.name === currentRef ? 'head' : 'local', color: branchColor(b.name) });
-  for (const b of refs.remote) push(b.tip, { name: b.name, type: 'remote', color: branchColor(b.name) });
+  for (const b of refs.local) push(b.tip, { name: b.name, type: b.name === currentRef ? 'head' : 'local', color: laneColor(b.name, b.tip) });
+  for (const b of refs.remote) push(b.tip, { name: b.name, type: 'remote', color: laneColor(b.name, b.tip) });
   for (const t of refs.tags) push(t.tip, { name: t.name, type: 'tag', color: 'var(--yellow)' });
 
   // ---- pick the spine tip ----
@@ -107,7 +118,7 @@ export function computeLanes(
     }
     if (!own.length) continue; // label-only ref (its commits live on another lane)
     const col = nextCol++;
-    const color = branchColor(ref.name);
+    const color = laneColor(ref.name, ref.tip);
     for (const x of own) {
       owner.set(x, col);
       ownerColor.set(x, color);
