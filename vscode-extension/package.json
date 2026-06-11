@@ -61,7 +61,7 @@
         "progit.command": {
           "type": "string",
           "default": "progit",
-          "description": "Command used to launch the progit server. Must be on PATH (install with `npm i -g progit`), or set an absolute path."
+          "description": "Command used to launch the progit server. Must be on PATH (install with `npm i -g @udit_v/progit`), or set an absolute path."
         },
         "progit.args": {
           "type": "array",

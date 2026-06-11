@@ -6,7 +6,17 @@
 //   node scripts/release.mjs <patch|minor|major|x.y.z> [--local]
 
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
+
+function loadEnv() {
+  const path = new URL('../.env', import.meta.url);
+  if (!existsSync(path)) return;
+  for (const line of readFileSync(path, 'utf8').split('\n')) {
+    const m = line.match(/^\s*([A-Z0-9_]+)\s*=\s*(.*)\s*$/);
+    if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, '');
+  }
+}
+loadEnv();
 
 const args = process.argv.slice(2);
 const local = args.includes('--local');
@@ -42,17 +52,27 @@ run('pnpm', ['run', 'typecheck']);
 run('pnpm', ['test']);
 run('pnpm', ['build']);
 
+if (local && !process.env.NPM_TOKEN) {
+  console.error('--local needs NPM_TOKEN (in .env or the environment) to authenticate with npm');
+  process.exit(1);
+}
+
 console.log(`› bumping version (${bump})`);
 run('npm', ['version', bump, '-m', 'release: v%s']);
 
 const { version } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url)));
-console.log(`› pushing v${version}`);
-run('git', ['push', '--follow-tags']);
 
 if (local) {
   console.log('› publishing from this machine');
   run('npm', ['publish']);
   console.log(`✓ published progit@${version}`);
-} else {
-  console.log(`✓ tagged and pushed v${version} — CI will publish on the tag`);
 }
+
+console.log(`› pushing v${version}`);
+run('git', ['push', '--follow-tags']);
+
+console.log(
+  local
+    ? `✓ released progit@${version}`
+    : `✓ tagged and pushed v${version} — CI will publish on the tag`,
+);

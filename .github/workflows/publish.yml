@@ -27,9 +27,10 @@ jobs:
       - name: Check version is unpublished
         id: check
         run: |
+          NAME=$(node -p "require('./package.json').name")
           VERSION=$(node -p "require('./package.json').version")
-          if npm view "progit@$VERSION" version >/dev/null 2>&1; then
-            echo "progit@$VERSION already published — skipping"
+          if npm view "$NAME@$VERSION" version >/dev/null 2>&1; then
+            echo "$NAME@$VERSION already published — skipping"
             echo "skip=true" >> "$GITHUB_OUTPUT"
           else
             echo "skip=false" >> "$GITHUB_OUTPUT"
@@ -39,4 +40,5 @@ jobs:
         if: steps.check.outputs.skip == 'false'
         run: npm publish --provenance --access public
         env:
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}

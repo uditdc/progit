@@ -25,7 +25,7 @@ Git mutations always shell out to your real `git` (no reimplementation), are ser
 Install globally and run the `progit` binary from any repository:
 
 ```sh
-npm i -g progit
+npm i -g @udit_v/progit
 
 progit                        # in a repo: opens the browser straight on it
 progit --port 8000 --no-open
@@ -71,7 +71,7 @@ node scripts/verify-remote.mjs 'http://localhost:3499/#/repository?path=%2Ftmp%2
 tab. The **progit: Open Repository View** command (Command Palette, or the
 branch icon in the Source Control title bar) reuses or spawns a progit server
 for the workspace folder and renders the UI in a Webview deep-linked to that
-repo. It expects `progit` on `PATH` (falls back to `npx -y progit`); see
+repo. It expects `progit` on `PATH` (falls back to `npx -y @udit_v/progit`); see
 `vscode-extension/README.md` for settings and packaging (`npm run package`).
 
 ## Releasing

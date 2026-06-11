@@ -69,7 +69,7 @@ async function ensureServer(port, cwd, log) {
       if (err && err.code === 'ENOENT' && useNpxFallback && !usedFallback) {
         usedFallback = true;
         log(`'${command}' not found — falling back to npx`);
-        child = launch('npx', ['-y', 'progit', ...managed], cwd);
+        child = launch('npx', ['-y', '@udit_v/progit', ...managed], cwd);
         child.once('error', (e) => reject(e));
         child.once('spawn', () => {
           server = child;
