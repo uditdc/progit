@@ -14,6 +14,7 @@ function letterStatus(ch: string): FileStatus {
 export function parseStatus(out: string): StatusPayload {
   const payload: StatusPayload = {
     branch: null,
+    upstream: null,
     ahead: 0,
     behind: 0,
     staged: [],
@@ -28,6 +29,8 @@ export function parseStatus(out: string): StatusPayload {
     if (tok.startsWith('# branch.head ')) {
       const head = tok.slice('# branch.head '.length);
       payload.branch = head === '(detached)' ? null : head;
+    } else if (tok.startsWith('# branch.upstream ')) {
+      payload.upstream = tok.slice('# branch.upstream '.length);
     } else if (tok.startsWith('# branch.ab ')) {
       const m = /\+(\d+) -(\d+)/.exec(tok);
       if (m) {

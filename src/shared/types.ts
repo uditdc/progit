@@ -65,6 +65,7 @@ export interface StatusFile {
 
 export interface StatusPayload {
   branch: string | null;
+  upstream: string | null;
   ahead: number;
   behind: number;
   staged: StatusFile[];

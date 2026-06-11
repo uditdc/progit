@@ -180,6 +180,9 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   const wdCount = status ? status.staged.length + status.unstaged.length + status.untracked.length + status.conflicted.length : 0;
   const hasUncommitted = wdCount > 0;
 
+  // nothing to push once the branch is tracking a remote and isn't ahead of it
+  const nothingToPush = Boolean(status?.upstream) && status?.ahead === 0;
+
   // ---- detail / drawer ----
   const peekObj = peekWt ? worktrees.find((w) => w.path === peekWt) ?? null : null;
   const selectedSha = selected && selected !== '__wd__' ? selected : null;
@@ -230,15 +233,31 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   // stage/unstage — renames need both paths when unstaging
   const stagePaths = (f: FileDiff) => [f.path];
   const unstagePaths = (f: FileDiff) => (f.origPath ? [f.path, f.origPath] : [f.path]);
+  // paths the user deliberately excluded — kept unstaged despite the auto-stage default
+  const excluded = React.useRef<Set<string>>(new Set());
   const onStage = (f: FileDiff, staged: boolean) => {
-    if (staged) actions.unstage.mutate({ paths: unstagePaths(f) });
-    else actions.stage.mutate({ paths: stagePaths(f) });
+    if (staged) {
+      excluded.current.add(f.path);
+      actions.unstage.mutate({ paths: unstagePaths(f) });
+    } else {
+      excluded.current.delete(f.path);
+      actions.stage.mutate({ paths: stagePaths(f) });
+    }
   };
   const onStageAll = (files: FileDiff[], staged: boolean) => {
     if (!files.length) return;
+    for (const f of files) (staged ? excluded.current.add(f.path) : excluded.current.delete(f.path));
     if (staged) actions.unstage.mutate({ paths: files.flatMap(unstagePaths) });
     else actions.stage.mutate({ paths: files.flatMap(stagePaths) });
   };
+
+  // auto-stage all changes by default; excluded files stay unstaged
+  React.useEffect(() => {
+    const d = workingDiffQ.data;
+    if (!d || peekObj) return;
+    const toStage = [...d.unstaged, ...d.untracked].map((f) => f.path).filter((p) => !excluded.current.has(p));
+    if (toStage.length) actions.stage.mutate({ paths: toStage });
+  }, [workingDiffQ.data, peekObj]);
   const stagedCount = workingDiffQ.data?.staged.length ?? 0;
   const canCommit = amend ? !actions.commit.isPending : Boolean(stagedCount && commitTitle.trim());
   const doCommit = () => {
@@ -573,9 +592,15 @@ export function RepoView({ repoPath }: { repoPath: string }) {
           )}
           <button
             className="tb-btn primary"
-            disabled={actions.push.isPending || !currentBranch}
-            title={currentBranch ? undefined : 'Detached HEAD — check out a branch to push'}
-            style={{ opacity: actions.push.isPending || !currentBranch ? 0.45 : 1 }}
+            disabled={actions.push.isPending || !currentBranch || nothingToPush}
+            title={
+              !currentBranch
+                ? 'Detached HEAD — check out a branch to push'
+                : nothingToPush
+                  ? 'Nothing to push — branch is up to date with its upstream'
+                  : undefined
+            }
+            style={{ opacity: actions.push.isPending || !currentBranch || nothingToPush ? 0.45 : 1 }}
             onClick={() => actions.push.mutate({})}
           >
             <Icon name="push" size={13} /> {actions.push.isPending ? 'Pushing…' : 'Push'}{' '}
