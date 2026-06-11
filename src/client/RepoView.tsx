@@ -29,7 +29,8 @@ import { CreateRefDialog } from './components/CreateRefDialog';
 import { CredentialDialog } from './components/CredentialDialog';
 import { api } from './api/client';
 
-const LOG_PAGE = 500;
+const LOG_FIRST = 20; // small first page for a fast initial paint
+const LOG_STEP = 50; // each infinite-scroll fetch grows the window by this much
 
 function RefMini({ r }: { r: ViewRef }) {
   if (r.type === 'tag')
@@ -69,7 +70,8 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   const [settings, setSetting] = useSettings();
 
   const repoQ = useRepo(repoPath);
-  const [limit, setLimit] = React.useState(LOG_PAGE);
+  const [limit, setLimit] = React.useState(LOG_FIRST);
+  const loadMore = React.useCallback(() => setLimit((l) => l + LOG_STEP), []);
   const logQ = useLog(repoPath, limit);
   const statsQ = useLogStats(repoPath, limit);
   const refsQ = useRefs(repoPath);
@@ -657,7 +659,8 @@ export function RepoView({ repoPath }: { repoPath: string }) {
             hasUncommitted={hasUncommitted}
             wdCount={wdCount}
             hasMore={logQ.data?.hasMore ?? false}
-            onLoadMore={() => setLimit((l) => l + LOG_PAGE)}
+            loadingMore={logQ.isFetching}
+            onLoadMore={loadMore}
           />
 
           {laned.length === 0 && !logQ.isLoading && (

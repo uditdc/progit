@@ -119,6 +119,7 @@ export interface TreeGraphProps {
   focusTipId: string | null;
   wdParentId: string | null;
   hasMore: boolean;
+  loadingMore: boolean;
   onLoadMore: () => void;
 }
 
@@ -150,9 +151,11 @@ export function TreeGraph({
   focusTipId,
   wdParentId,
   hasMore,
+  loadingMore,
   onLoadMore,
 }: TreeGraphProps) {
   const scrollRef = React.useRef<HTMLDivElement>(null);
+  const loadMoreRef = React.useRef<HTMLDivElement>(null);
   const commitYRef = React.useRef<Record<string, number>>({});
   const [expanded, setExpanded] = React.useState<Set<string>>(() => new Set());
   const byId = React.useMemo(() => {
@@ -293,6 +296,21 @@ export function TreeGraph({
     el.scrollTo({ top: Math.max(0, y - el.clientHeight * frac), behavior: selected ? 'smooth' : 'auto' });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [focusTipId, selected]);
+
+  // infinite scroll: pull the next window once the sentinel nears the viewport
+  React.useEffect(() => {
+    const root = scrollRef.current;
+    const sentinel = loadMoreRef.current;
+    if (!root || !sentinel || !hasMore || loadingMore) return;
+    const obs = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((e) => e.isIntersecting)) onLoadMore();
+      },
+      { root, rootMargin: '300px' },
+    );
+    obs.observe(sentinel);
+    return () => obs.disconnect();
+  }, [hasMore, loadingMore, totalH, onLoadMore]);
 
   return (
     <div className="tree-scroll" ref={scrollRef}>
@@ -473,12 +491,12 @@ export function TreeGraph({
             );
           })}
 
-          {/* load-more row (history window) */}
+          {/* load-more row (history window) — auto-loads on scroll, click as fallback */}
           {hasMore && (
-            <div className="tbreak" style={{ top: loadMoreTop, height: T_BRK }} onClick={onLoadMore}>
+            <div ref={loadMoreRef} className="tbreak" style={{ top: loadMoreTop, height: T_BRK }} onClick={onLoadMore}>
               <div className="brk-pill" style={{ left: laneX(0) }}>⋯</div>
               <div className="railpad" style={{ width: cardLeft }} />
-              <div className="brk-label">older history not loaded · load more</div>
+              <div className="brk-label">{loadingMore ? 'loading more commits…' : 'scroll to load more history'}</div>
             </div>
           )}
 
