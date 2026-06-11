@@ -152,9 +152,9 @@ async function openRepoView() {
   const frameOrigin = `${base.scheme}://${base.authority}`;
 
   if (panel) {
-    panel.reveal(vscode.ViewColumn.Active);
+    panel.reveal(vscode.ViewColumn.Active, false);
   } else {
-    panel = vscode.window.createWebviewPanel('progit.view', 'progit', vscode.ViewColumn.Active, {
+    panel = vscode.window.createWebviewPanel('progit.view', 'progit', { viewColumn: vscode.ViewColumn.Active, preserveFocus: false }, {
       enableScripts: true,
       retainContextWhenHidden: true,
     });
