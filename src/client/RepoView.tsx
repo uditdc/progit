@@ -671,20 +671,6 @@ export function RepoView({ repoPath }: { repoPath: string }) {
               </div>
             </div>
           )}
-
-          {!selected && !peekObj && laned.length > 0 && (
-            <div className="tree-hint">
-              <span>
-                <span className="k">↑</span> <span className="k">↓</span> navigate
-              </span>
-              <span>
-                click a <b style={{ color: 'var(--tx-mid)', fontWeight: 600 }}>branch pill</b> to checkout — it becomes the trunk
-              </span>
-              <span>
-                <span className="k">click</span> a commit for the diff
-              </span>
-            </div>
-          )}
         </div>
 
         {/* ---------- diff panel ---------- */}
