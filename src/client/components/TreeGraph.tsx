@@ -61,16 +61,17 @@ export function TipCap({
       </span>
     );
 
-  // remote tracking — muted
+  // remote tracking — globe glyph only, full name on hover to save space
   if (r.type === 'remote')
     return (
       <span
         className="refmini"
+        title={r.name}
         onClick={handler}
         onContextMenu={handler}
         style={{ cursor: handler ? 'pointer' : undefined, color: 'var(--tx-mid)', borderColor: 'var(--line)', background: 'var(--bg-2)' }}
       >
-        <Icon name="remote" size={9} style={{ opacity: 0.7 }} /> {r.name}
+        <Icon name="remote" size={11} style={{ opacity: 0.7 }} />
       </span>
     );
 
