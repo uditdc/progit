@@ -326,8 +326,8 @@ export function TreeGraph({
 
   return (
     <div className="tree-scroll" ref={scrollRef}>
-      {/* widen past the design's 940px column when many lanes would crush the text */}
-      <div className="tree-wrap" style={{ maxWidth: Math.max(940, railW + 660) }}>
+      {/* widen past the design's base column when many lanes would crush the text */}
+      <div className="tree-wrap" style={{ maxWidth: Math.max(1100, railW + 720) }}>
         <div className="tree-inner" style={{ height: totalH }}>
           <svg className="tree-svg" width={railW} height={totalH}>
             {Object.entries(spans).map(([col, s]) => (
@@ -481,7 +481,7 @@ export function TreeGraph({
                       {initials(c.author)}
                     </span>
                     <span className="msg">{c.msg}</span>
-                    <span className="auth">{c.author.split(' ')[0]}</span>
+                    {/* <span className="auth">{c.author.split(' ')[0]}</span> */}
                     <span className="spacer" />
                     {c.add != null && (
                       <span className="stat">

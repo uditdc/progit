@@ -108,7 +108,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   const [commitBody, setCommitBody] = React.useState('');
   const [amend, setAmend] = React.useState(false);
 
-  const [drawerW, setDrawerW] = React.useState<number>(() => Number(localStorage.getItem('progit_drawer_w')) || 0);
+  const [drawerW, setDrawerW] = React.useState<number>(() => Number(localStorage.getItem('progit_diff_w')) || 0);
   const [resizing, setResizing] = React.useState(false);
   const startResize = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -116,7 +116,8 @@ export function RepoView({ repoPath }: { repoPath: string }) {
     document.body.style.userSelect = 'none';
     document.body.style.cursor = 'col-resize';
     const onMove = (ev: MouseEvent) => {
-      const w = Math.min(Math.max(window.innerWidth - ev.clientX, 420), window.innerWidth - 360);
+      // keep the overlay wide (≥55% of the window) so the tree graph still reads on the left
+      const w = Math.min(Math.max(window.innerWidth - ev.clientX, window.innerWidth * 0.55), window.innerWidth - 280);
       setDrawerW(w);
     };
     const onUp = () => {
@@ -126,7 +127,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
       document.body.style.cursor = '';
       setResizing(false);
       setDrawerW((w) => {
-        if (w) localStorage.setItem('progit_drawer_w', String(w));
+        if (w) localStorage.setItem('progit_diff_w', String(w));
         return w;
       });
     };
@@ -311,11 +312,12 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   } else if (selectedCommit) {
     const files = commitDiffQ.data?.sha === selectedCommit.id ? commitDiffQ.data.files : [];
     detail = { kind: 'commit', commit: selectedCommit, groups: [{ label: null, files, staged: false }] };
-  } else if (hasUncommitted) {
+  } else if (selected === '__wd__' && hasUncommitted) {
     detail = { kind: 'wd', groups: wdGroups() };
   } else {
     detail = { kind: 'empty' };
   }
+  const drawerOpen = detail.kind !== 'empty';
 
   // ---- menus ----
   const buildCommitActions = (c: LanedCommit): MenuAction[] => [
@@ -650,7 +652,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
 
       {/* ---------- tree stage + permanent diff panel ---------- */}
       <div className="v3-stage">
-        <div className="stage-tree">
+        <div className={'stage-tree' + (drawerOpen ? ' shifted' : '')}>
           <TreeGraph
             commits={laned}
             selected={selected}
@@ -686,9 +688,9 @@ export function RepoView({ repoPath }: { repoPath: string }) {
         </div>
 
         {/* ---------- diff panel ---------- */}
-        <div className="diff-panel" style={{ width: drawerW || undefined }}>
+        <div className={'diff-panel' + (drawerOpen ? ' open' : '')} style={{ width: drawerW || undefined }}>
           <div className={'drawer-resize' + (resizing ? ' dragging' : '')} onMouseDown={startResize} />
-          {(detail.kind === 'commit' || detail.kind === 'peek') && (
+          {drawerOpen && (
             <button className="drawer-close" onClick={closeDrawer}>
               ✕
             </button>
