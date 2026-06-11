@@ -15,11 +15,23 @@ const T_GAP = 30;
 const T_R = 6;
 const RUN_MIN = 4; // collapse same-lane, ref-less runs of >= this many
 const MAX_COL = 12; // lanes past this share the last column so the rail can't crowd out the card
+const BEND = 26; // fixed height of the lane-change S-bend; edges are straight rails elsewhere
 
+// Edges run as straight vertical rails in the outer (higher-column) lane and turn
+// into the main lane through a short S confined to a BEND-tall band at the join.
 function edgePathV(x1: number, y1: number, x2: number, y2: number): string {
   if (x1 === x2) return `M${x1} ${y1} L${x2} ${y2}`;
-  const my = (y1 + y2) / 2;
-  return `M${x1} ${y1} C ${x1} ${my}, ${x2} ${my}, ${x2} ${y2}`;
+  const k = Math.min(BEND, Math.abs(y2 - y1));
+  if (x1 > x2) {
+    // child is the side branch → straight down its lane, hook into the parent at the bottom
+    const yb = y2 - k;
+    const mid = y2 - k / 2;
+    return `M${x1} ${y1} L${x1} ${yb} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
+  }
+  // parent is the side branch → hook out of the child at the top, then straight down its lane
+  const yb = y1 + k;
+  const mid = y1 + k / 2;
+  return `M${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${yb} L${x2} ${y2}`;
 }
 
 export function TipCap({
