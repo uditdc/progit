@@ -14,6 +14,7 @@ const T_PAD = 30;
 const T_GAP = 30;
 const T_R = 6;
 const RUN_MIN = 4; // collapse same-lane, ref-less runs of >= this many
+const MAX_COL = 12; // lanes past this share the last column so the rail can't crowd out the card
 
 function edgePathV(x1: number, y1: number, x2: number, y2: number): string {
   if (x1 === x2) return `M${x1} ${y1} L${x2} ${y2}`;
@@ -166,7 +167,7 @@ export function TreeGraph({
   }, [focusTipId, collapseFocus]);
 
   const maxCol = commits.reduce((m, c) => Math.max(m, c.col), 0);
-  const laneX = (col: number) => T_PAD + col * T_GAP;
+  const laneX = (col: number) => T_PAD + Math.min(col, MAX_COL) * T_GAP;
   const railW = laneX(maxCol) + T_PAD;
   const cardLeft = railW + 8;
 
