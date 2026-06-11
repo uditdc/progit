@@ -38,7 +38,6 @@ export function Home() {
       <div className="v3-top">
         <div className="v3-brand">
           <span className="mark" /> progit
-          <span className="ver">M1 · tree</span>
         </div>
       </div>
       <div className="home-stage">

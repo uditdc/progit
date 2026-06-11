@@ -11,6 +11,9 @@ import '@fontsource/jetbrains-mono/500.css';
 import '@fontsource/jetbrains-mono/600.css';
 import './styles/styles.css';
 import './styles/tree-v3.css';
+import { applyAppearance } from './lib/settings';
+
+applyAppearance();
 
 const queryClient = new QueryClient({
   defaultOptions: {

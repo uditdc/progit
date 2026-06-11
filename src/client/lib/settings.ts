@@ -1,29 +1,52 @@
 import React from 'react';
 
 export type DiffMode = 'inline' | 'split';
+export type Theme = 'light' | 'dark';
 
 export interface Settings {
   diffMode: DiffMode;
   collapse: boolean;
   accent: string;
+  theme: Theme;
 }
 
-export const ACCENTS: Record<string, [string, string, string]> = {
-  '#5fd38d': ['oklch(0.80 0.16 150)', 'oklch(0.80 0.16 150 / 0.14)', 'oklch(0.80 0.16 150 / 0.45)'],
-  '#5aa9f5': ['oklch(0.74 0.15 245)', 'oklch(0.74 0.15 245 / 0.16)', 'oklch(0.74 0.15 245 / 0.5)'],
-  '#c08bf0': ['oklch(0.74 0.16 300)', 'oklch(0.74 0.16 300 / 0.16)', 'oklch(0.74 0.16 300 / 0.5)'],
-  '#f0a55a': ['oklch(0.78 0.15 65)', 'oklch(0.78 0.15 65 / 0.16)', 'oklch(0.78 0.15 65 / 0.5)'],
+/* Accents are hue-driven: each theme picks its own lightness so the same accent
+   stays legible on both light and dark. `swatch` is just the picker preview. */
+export interface Accent {
+  swatch: string;
+  h: number;
+  c: number;
+}
+
+export const ACCENTS: Record<string, Accent> = {
+  green: { swatch: 'oklch(0.72 0.16 150)', h: 150, c: 0.16 },
+  blue: { swatch: 'oklch(0.64 0.16 245)', h: 245, c: 0.15 },
+  purple: { swatch: 'oklch(0.64 0.17 300)', h: 300, c: 0.16 },
+  orange: { swatch: 'oklch(0.68 0.15 65)', h: 65, c: 0.15 },
 };
 
-const DEFAULTS: Settings = { diffMode: 'inline', collapse: true, accent: '#5fd38d' };
+const DEFAULTS: Settings = { diffMode: 'inline', collapse: true, accent: 'green', theme: 'dark' };
 const KEY = 'progit_settings';
 
 function load(): Settings {
   try {
-    return { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
+    const next = { ...DEFAULTS, ...JSON.parse(localStorage.getItem(KEY) ?? '{}') };
+    if (!(next.accent in ACCENTS)) next.accent = DEFAULTS.accent;
+    return next;
   } catch {
     return DEFAULTS;
   }
+}
+
+/** Apply theme + accent to the document before React renders, so there's no
+    flash of the default theme on first paint or on the home screen. */
+export function applyAppearance(): void {
+  const s = load();
+  const a = ACCENTS[s.accent] ?? ACCENTS.green!;
+  const r = document.documentElement;
+  r.setAttribute('data-theme', s.theme);
+  r.style.setProperty('--accent-h', String(a.h));
+  r.style.setProperty('--accent-c', String(a.c));
 }
 
 export function useSettings(): [Settings, <K extends keyof Settings>(k: K, v: Settings[K]) => void] {
@@ -36,11 +59,13 @@ export function useSettings(): [Settings, <K extends keyof Settings>(k: K, v: Se
     });
   }, []);
   React.useEffect(() => {
-    const a = ACCENTS[settings.accent] ?? ACCENTS['#5fd38d']!;
+    const a = ACCENTS[settings.accent] ?? ACCENTS.green!;
     const r = document.documentElement;
-    r.style.setProperty('--accent', a[0]);
-    r.style.setProperty('--accent-dim', a[1]);
-    r.style.setProperty('--accent-line', a[2]);
+    r.style.setProperty('--accent-h', String(a.h));
+    r.style.setProperty('--accent-c', String(a.c));
   }, [settings.accent]);
+  React.useEffect(() => {
+    document.documentElement.setAttribute('data-theme', settings.theme);
+  }, [settings.theme]);
   return [settings, update];
 }

@@ -407,7 +407,6 @@ export function RepoView({ repoPath }: { repoPath: string }) {
       <div className="v3-top">
         <div className="v3-brand" style={{ cursor: 'pointer' }} onClick={navigateHome} title="All repositories">
           <span className="mark" /> progit
-          <span className="ver">M1 · tree</span>
         </div>
         <div className="wt-switch" onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
           <button className="tb-btn" onClick={() => setBrPop((v) => !v)}>
@@ -585,6 +584,13 @@ export function RepoView({ repoPath }: { repoPath: string }) {
               </Pop>
             </div>
           )}
+          <button
+            className="tb-btn"
+            onClick={() => setSetting('theme', settings.theme === 'dark' ? 'light' : 'dark')}
+            title={settings.theme === 'dark' ? 'Switch to light' : 'Switch to dark'}
+          >
+            <Icon name={settings.theme === 'dark' ? 'sun' : 'moon'} size={14} />
+          </button>
           <div className="wt-switch" onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
             <button className="tb-btn" onClick={() => setSetPop((v) => !v)} title="Settings">
               <Icon name="gear" size={13} />
@@ -612,6 +618,17 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                   </label>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                  <span style={{ fontSize: 13, color: 'var(--tx)' }}>Appearance</span>
+                  <div className="seg">
+                    <button className={settings.theme === 'light' ? 'on' : ''} onClick={() => setSetting('theme', 'light')}>
+                      <Icon name="sun" size={13} /> Light
+                    </button>
+                    <button className={settings.theme === 'dark' ? 'on' : ''} onClick={() => setSetting('theme', 'dark')}>
+                      <Icon name="moon" size={13} /> Dark
+                    </button>
+                  </div>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
                   <span style={{ fontSize: 13, color: 'var(--tx)' }}>Accent</span>
                   <div style={{ display: 'flex', gap: 6 }}>
                     {Object.keys(ACCENTS).map((a) => (
@@ -622,9 +639,9 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                           width: 18,
                           height: 18,
                           borderRadius: '50%',
-                          background: ACCENTS[a]![0],
+                          background: ACCENTS[a]!.swatch,
                           cursor: 'pointer',
-                          boxShadow: settings.accent === a ? '0 0 0 2px var(--bg-1), 0 0 0 4px ' + ACCENTS[a]![0] : 'none',
+                          boxShadow: settings.accent === a ? '0 0 0 2px var(--bg-1), 0 0 0 4px ' + ACCENTS[a]!.swatch : 'none',
                         }}
                       />
                     ))}

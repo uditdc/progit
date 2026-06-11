@@ -2,44 +2,103 @@
    Ungit-next — dark terminal-adjacent IDE design system
    ============================================================ */
 :root {
-  /* surfaces (cool near-black neutrals) */
-  --bg-0: oklch(0.165 0.006 255);   /* app frame */
-  --bg-1: oklch(0.195 0.006 255);   /* panels */
-  --bg-2: oklch(0.225 0.007 255);   /* elevated / rows */
-  --bg-3: oklch(0.265 0.008 255);   /* hover */
-  --bg-inset: oklch(0.145 0.006 255);
-
-  --line: oklch(0.30 0.008 255);
-  --line-soft: oklch(0.255 0.007 255);
-
-  --tx-hi: oklch(0.955 0.004 255);
-  --tx: oklch(0.80 0.006 255);
-  --tx-mid: oklch(0.66 0.007 255);
-  --tx-lo: oklch(0.52 0.008 255);
-
-  --accent: oklch(0.80 0.16 150);   /* green */
-  --accent-dim: oklch(0.80 0.16 150 / 0.14);
-  --accent-line: oklch(0.80 0.16 150 / 0.45);
-
-  --blue: oklch(0.74 0.15 245);
-  --purple: oklch(0.74 0.16 300);
-  --orange: oklch(0.78 0.15 65);
-  --red: oklch(0.72 0.16 22);
-  --yellow: oklch(0.84 0.14 95);
-
-  --add: oklch(0.78 0.15 150);
-  --add-bg: oklch(0.78 0.15 150 / 0.12);
-  --add-bg-strong: oklch(0.78 0.15 150 / 0.26);
-  --del: oklch(0.72 0.16 22);
-  --del-bg: oklch(0.72 0.16 22 / 0.12);
-  --del-bg-strong: oklch(0.72 0.16 22 / 0.26);
-
   --sans: 'Inter', system-ui, sans-serif;
   --mono: 'JetBrains Mono', ui-monospace, monospace;
 
   --r: 6px;
   --r-lg: 10px;
+
+  /* accent is hue-driven so it can stay legible across light/dark; the picker
+     sets only --accent-h / --accent-c and each theme picks its own lightness. */
+  --accent-h: 150;
+  --accent-c: 0.16;
+}
+
+/* ---------- Dark (Dracula-tinted) — default ---------- */
+:root,
+:root[data-theme='dark'] {
+  --bg-0: oklch(0.265 0.026 286);   /* app frame */
+  --bg-1: oklch(0.300 0.030 286);   /* panels */
+  --bg-2: oklch(0.345 0.034 286);   /* elevated / rows */
+  --bg-3: oklch(0.395 0.036 287);   /* hover */
+  --bg-inset: oklch(0.235 0.022 286);
+
+  --line: oklch(0.40 0.040 287);
+  --line-soft: oklch(0.33 0.032 286);
+
+  --tx-hi: oklch(0.975 0.010 95);
+  --tx: oklch(0.90 0.014 95);
+  --tx-mid: oklch(0.74 0.022 290);
+  --tx-lo: oklch(0.62 0.030 290);
+
+  --accent: oklch(0.80 var(--accent-c) var(--accent-h));
+  --on-accent: oklch(0.20 0.03 var(--accent-h));
+
+  --blue: oklch(0.84 0.12 215);
+  --purple: oklch(0.74 0.155 300);
+  --orange: oklch(0.82 0.12 62);
+  --red: oklch(0.70 0.19 18);
+  --yellow: oklch(0.92 0.13 105);
+
+  --add: oklch(0.84 0.18 145);
+  --del: oklch(0.70 0.19 18);
+
+  --tk-kw: oklch(0.74 0.18 350);
+  --tk-str: oklch(0.92 0.13 105);
+  --tk-num: oklch(0.74 0.155 300);
+  --tk-type: oklch(0.84 0.12 200);
+  --tk-fn: oklch(0.86 0.20 145);
+
+  --scheme-tint: oklch(0.33 0.045 290);
   --shadow: 0 8px 28px -8px rgba(0,0,0,0.6), 0 2px 6px -2px rgba(0,0,0,0.5);
+}
+
+/* ---------- Light (Paper) ---------- */
+:root[data-theme='light'] {
+  --bg-0: oklch(0.985 0.002 255);
+  --bg-1: oklch(0.968 0.003 250);
+  --bg-2: oklch(0.945 0.004 250);
+  --bg-3: oklch(0.905 0.006 248);
+  --bg-inset: oklch(0.925 0.004 250);
+
+  --line: oklch(0.86 0.006 250);
+  --line-soft: oklch(0.915 0.004 250);
+
+  --tx-hi: oklch(0.26 0.012 258);
+  --tx: oklch(0.38 0.012 256);
+  --tx-mid: oklch(0.52 0.012 254);
+  --tx-lo: oklch(0.63 0.010 252);
+
+  --accent: oklch(0.58 var(--accent-c) var(--accent-h));
+  --on-accent: oklch(0.99 0.01 var(--accent-h));
+
+  --blue: oklch(0.52 0.16 250);
+  --purple: oklch(0.52 0.18 300);
+  --orange: oklch(0.58 0.15 55);
+  --red: oklch(0.53 0.20 25);
+  --yellow: oklch(0.70 0.14 85);
+
+  --add: oklch(0.56 0.15 150);
+  --del: oklch(0.53 0.20 25);
+
+  --tk-kw: oklch(0.50 0.18 300);
+  --tk-str: oklch(0.48 0.14 145);
+  --tk-num: oklch(0.52 0.14 55);
+  --tk-type: oklch(0.48 0.13 215);
+  --tk-fn: oklch(0.48 0.16 255);
+
+  --scheme-tint: oklch(0.95 0.01 250);
+  --shadow: 0 8px 24px -10px rgba(0,0,0,0.18), 0 2px 6px -3px rgba(0,0,0,0.12);
+}
+
+/* derived tokens — shared formulas, resolve against whichever theme is active */
+:root {
+  --accent-dim: color-mix(in oklch, var(--accent) 14%, transparent);
+  --accent-line: color-mix(in oklch, var(--accent) 45%, transparent);
+  --add-bg: color-mix(in oklch, var(--add) 12%, transparent);
+  --add-bg-strong: color-mix(in oklch, var(--add) 26%, transparent);
+  --del-bg: color-mix(in oklch, var(--del) 12%, transparent);
+  --del-bg-strong: color-mix(in oklch, var(--del) 26%, transparent);
 }
 
 * { box-sizing: border-box; }
@@ -52,6 +111,7 @@ body {
   line-height: 1.45;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
+  transition: background .2s ease, color .2s ease;
 }
 #root { height: 100vh; }
 ::selection { background: var(--accent-dim); }
@@ -88,10 +148,10 @@ body {
   color: var(--tx); font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap;
 }
 .tb-btn:hover { background: var(--bg-3); border-color: var(--line); }
-.tb-btn.primary { background: var(--accent); color: oklch(0.18 0.02 150); border-color: transparent; font-weight: 600; }
+.tb-btn.primary { background: var(--accent); color: var(--on-accent); border-color: transparent; font-weight: 600; }
 .tb-btn.primary:hover { filter: brightness(1.06); }
 .tb-btn .cnt { color: var(--tx-lo); font-variant-numeric: tabular-nums; }
-.tb-btn.primary .cnt { color: oklch(0.30 0.05 150); }
+.tb-btn.primary .cnt { color: color-mix(in oklch, var(--on-accent) 65%, var(--accent)); }
 
 .statusbar {
   display: flex; align-items: center; gap: 14px; padding: 0 12px;
@@ -204,7 +264,7 @@ body {
 .gt-title { font-size: 13px; color: var(--tx-mid); font-weight: 600; }
 .gt-spacer { flex: 1; }
 .seg { display: inline-flex; background: var(--bg-inset); border: 1px solid var(--line); border-radius: var(--r); padding: 2px; }
-.seg button { border: 0; background: none; color: var(--tx-mid); font: inherit; font-size: 12.5px; padding: 3px 9px; border-radius: 4px; cursor: pointer; }
+.seg button { display: inline-flex; align-items: center; gap: 5px; border: 0; background: none; color: var(--tx-mid); font: inherit; font-size: 12.5px; padding: 3px 9px; border-radius: 4px; cursor: pointer; }
 .seg button.on { background: var(--bg-3); color: var(--tx-hi); }
 
 .graph-scroll { flex: 1; overflow-y: auto; position: relative; }
@@ -265,7 +325,7 @@ body {
 .file-row:hover { background: var(--bg-2); }
 .file-row.sel { background: var(--bg-2); box-shadow: inset 2px 0 0 var(--accent); }
 .file-row .stico { width: 15px; height: 15px; border-radius: 3px; display: grid; place-items: center; font-size: 10px; font-weight: 800; font-family: var(--mono); flex-shrink: 0; }
-.st-modified { background: oklch(0.78 0.15 65 / .2); color: var(--orange); }
+.st-modified { background: color-mix(in oklch, var(--orange) 20%, transparent); color: var(--orange); }
 .st-added { background: var(--add-bg-strong); color: var(--add); }
 .st-deleted { background: var(--del-bg-strong); color: var(--del); }
 .st-untracked { background: var(--bg-3); color: var(--tx-mid); }
@@ -288,8 +348,8 @@ body {
 .diff-file-head .ff { margin-left: auto; display: flex; align-items: center; gap: 10px; }
 
 .code { font-family: var(--mono); font-size: 13px; line-height: 1.55; background: var(--bg-inset); }
-.hunk-head { display: flex; padding: 3px 0; background: oklch(0.74 0.15 245 / .07); color: var(--blue); }
-.hunk-head .gutter { color: oklch(0.74 0.15 245 / .6); }
+.hunk-head { display: flex; padding: 3px 0; background: color-mix(in oklch, var(--blue) 8%, transparent); color: var(--blue); }
+.hunk-head .gutter { color: color-mix(in oklch, var(--blue) 55%, transparent); }
 .hunk-head .hx { padding-left: 8px; opacity: .85; }
 .collapsed-ctx { display: flex; align-items: center; gap: 8px; padding: 4px 14px; color: var(--tx-lo); background: var(--bg-1); cursor: pointer; border-top: 1px dashed var(--line); border-bottom: 1px dashed var(--line); font-size: 12px; }
 .collapsed-ctx:hover { color: var(--tx-mid); background: var(--bg-2); }
@@ -323,15 +383,15 @@ body {
 .sline.del { background: var(--del-bg); }
 .sline.add .whl { background: var(--add-bg-strong); border-radius: 2px; }
 .sline.del .whl { background: var(--del-bg-strong); border-radius: 2px; }
-.sline.empty { background: oklch(0.155 0.006 255); }
+.sline.empty { background: color-mix(in oklch, var(--bg-inset) 55%, var(--bg-1)); }
 
 /* syntax tokens */
-.tk-kw { color: oklch(0.78 0.13 300); }
-.tk-str { color: oklch(0.80 0.13 140); }
-.tk-num { color: oklch(0.82 0.12 70); }
+.tk-kw { color: var(--tk-kw); }
+.tk-str { color: var(--tk-str); }
+.tk-num { color: var(--tk-num); }
 .tk-cmt { color: var(--tx-lo); font-style: italic; }
-.tk-type { color: oklch(0.82 0.11 200); }
-.tk-fn { color: oklch(0.80 0.12 250); }
+.tk-type { color: var(--tk-type); }
+.tk-fn { color: var(--tk-fn); }
 .tk-punc { color: var(--tx-mid); }
 .tk-md { color: var(--tx); }
 
