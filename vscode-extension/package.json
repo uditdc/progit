@@ -1,0 +1,95 @@
+{
+  "name": "progit-vscode",
+  "displayName": "progit",
+  "description": "Open the progit git visualization for the current workspace, inside VS Code.",
+  "version": "0.1.0",
+  "publisher": "udit",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/uditdc/progit.git",
+    "directory": "vscode-extension"
+  },
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "SCM Providers",
+    "Visualization"
+  ],
+  "keywords": [
+    "git",
+    "ungit",
+    "visualization",
+    "graph"
+  ],
+  "main": "./extension.js",
+  "activationEvents": [],
+  "contributes": {
+    "commands": [
+      {
+        "command": "progit.open",
+        "title": "Open Repository View",
+        "category": "progit",
+        "icon": "$(git-branch)"
+      },
+      {
+        "command": "progit.stopServer",
+        "title": "Stop Server",
+        "category": "progit"
+      }
+    ],
+    "menus": {
+      "scm/title": [
+        {
+          "command": "progit.open",
+          "group": "navigation"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "progit.open"
+        },
+        {
+          "command": "progit.stopServer"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "progit",
+      "properties": {
+        "progit.command": {
+          "type": "string",
+          "default": "progit",
+          "description": "Command used to launch the progit server. Must be on PATH (install with `npm i -g progit`), or set an absolute path."
+        },
+        "progit.args": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "default": [],
+          "description": "Extra arguments passed to the progit command before the managed --no-open/--port flags."
+        },
+        "progit.port": {
+          "type": "number",
+          "default": 8449,
+          "description": "Port the progit server listens on. A running instance on this port is reused."
+        },
+        "progit.useNpxFallback": {
+          "type": "boolean",
+          "default": true,
+          "description": "If the configured command is not found, fall back to `npx -y progit`."
+        }
+      }
+    }
+  },
+  "scripts": {
+    "package": "vsce package",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.85.0",
+    "@vscode/vsce": "^3.2.0"
+  }
+}

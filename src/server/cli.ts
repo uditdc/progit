@@ -8,9 +8,24 @@ function arg(name: string): string | undefined {
   const i = process.argv.indexOf(name);
   return i !== -1 ? process.argv[i + 1] : undefined;
 }
-function flag(name: string): boolean {
-  return process.argv.includes(name);
+function flag(...names: string[]): boolean {
+  return names.some((n) => process.argv.includes(n));
 }
+
+const HELP = `progit — web-based git visualization, an ungit successor
+
+Usage:
+  progit [options]
+
+Options:
+  --repo <path>   Open this repository instead of the current directory
+  --port <n>      Port to listen on (default: 8449)
+  --no-open       Don't open a browser window on start
+  -v, --version   Print the version and exit
+  -h, --help      Show this help and exit
+
+Run inside a git repository to open straight on it. One server handles any
+repository on the machine; a second invocation reuses a running instance.`;
 
 function openBrowser(url: string): void {
   const cmd = process.platform === 'darwin' ? 'open' : process.platform === 'win32' ? 'start' : 'xdg-open';
@@ -36,7 +51,11 @@ async function isProgit(port: number): Promise<boolean> {
 }
 
 async function main() {
-  if (flag('--version')) {
+  if (flag('-h', '--help')) {
+    console.log(HELP);
+    return;
+  }
+  if (flag('-v', '--version')) {
     const { default: pkg } = await import('../../package.json', { with: { type: 'json' } });
     console.log(pkg.version);
     return;

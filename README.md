@@ -22,13 +22,23 @@ Git mutations always shell out to your real `git` (no reimplementation), are ser
 
 ## Usage
 
+Install globally and run the `progit` binary from any repository:
+
+```sh
+npm i -g progit
+
+progit                        # in a repo: opens the browser straight on it
+progit --port 8000 --no-open
+progit --repo /path/to/repo
+progit --help
+```
+
+From source:
+
 ```sh
 pnpm install
 pnpm build
-
-node bin/progit.js            # in a repo: opens the browser straight on it
-node bin/progit.js --port 8000 --no-open
-node bin/progit.js --repo /path/to/repo
+node bin/progit.js            # same flags as above
 ```
 
 Navigation is URL-based, like ungit: one server handles **any repository on the machine**. `#/repository?path=/abs/path` is the canonical, shareable address of a repo view; the bare URL is a home screen with a path input and your recent repositories. Running the CLI inside a repo just deep-links you there.
@@ -54,6 +64,28 @@ node scripts/verify-ui.mjs 'http://localhost:3499/#/repository?path=%2Ftmp%2Fpro
 node scripts/verify-live.mjs 'http://localhost:3499/#/repository?path=%2Ftmp%2Fprogit-fixture' /tmp/progit-fixture
 node scripts/verify-remote.mjs 'http://localhost:3499/#/repository?path=%2Ftmp%2Fprogit-fixture' /tmp/progit-fixture  # push/fetch/pull + credential modal
 ```
+
+## VS Code extension
+
+`vscode-extension/` is a companion extension that runs progit inside an editor
+tab. The **progit: Open Repository View** command (Command Palette, or the
+branch icon in the Source Control title bar) reuses or spawns a progit server
+for the workspace folder and renders the UI in a Webview deep-linked to that
+repo. It expects `progit` on `PATH` (falls back to `npx -y progit`); see
+`vscode-extension/README.md` for settings and packaging (`npm run package`).
+
+## Releasing
+
+The package publishes to npm. Both paths run `prepublishOnly`
+(typecheck → test → build):
+
+```sh
+pnpm release patch          # bump, tag, push → CI publishes on the tag
+pnpm release minor --local  # ...and publish from this machine instead
+```
+
+`.github/workflows/publish.yml` publishes with provenance on any `v*` tag push
+(needs an `NPM_TOKEN` secret) and skips versions already on the registry.
 
 ## Architecture
 
