@@ -45,6 +45,10 @@ Navigation is URL-based, like ungit: one server handles **any repository on the 
 
 The server listens on **8449** by default. If a progit instance already owns the port, a second `progit` invocation doesn't start another server — it opens a browser tab on the running one, pointed at the repo you invoked it from. If the port is held by some other program, it exits with an error (use `--port`).
 
+### Auto-update
+
+On start, a global install checks npm at most once a day for a newer release and, if one exists, runs `npm i -g @udit_v/progit@latest` in place (you'll be told to restart progit to pick it up). The check runs in the background and never blocks startup. Source checkouts are skipped. Opt out with `--no-update` or the `PROGIT_NO_UPDATE` environment variable.
+
 ## Development
 
 ```sh

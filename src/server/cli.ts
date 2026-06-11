@@ -3,6 +3,7 @@ import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { createApp, type AppRuntime } from './app.js';
 import { createRegistry } from './repos.js';
+import { maybeAutoUpdate } from './update.js';
 
 function arg(name: string): string | undefined {
   const i = process.argv.indexOf(name);
@@ -21,6 +22,7 @@ Options:
   --repo <path>   Open this repository instead of the current directory
   --port <n>      Port to listen on (default: 8449)
   --no-open       Don't open a browser window on start
+  --no-update     Don't check npm for a newer version on start
   -v, --version   Print the version and exit
   -h, --help      Show this help and exit
 
@@ -79,6 +81,7 @@ async function main() {
     console.log(cwdRepo ? `progit serving ${cwdRepo}` : 'progit (no repository in cwd — open one from the home page)');
     console.log(`  ${urlFor(info.port)}`);
     if (!flag('--no-open')) openBrowser(urlFor(info.port));
+    void maybeAutoUpdate(flag('--no-update'));
   });
 
   server.on('error', async (err: NodeJS.ErrnoException) => {
