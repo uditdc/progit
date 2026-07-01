@@ -67,9 +67,8 @@
 .v3-stage { flex: 1; min-height: 0; display: flex; overflow: hidden; position: relative; }
 .stage-tree { flex: 1; min-width: 0; position: relative; overflow: hidden; }
 .tree-scroll { position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; }
-.tree-wrap { max-width: 1100px; margin: 0 auto; padding: 22px 28px 80px; transition: margin .32s cubic-bezier(.4,0,.2,1), max-width .32s cubic-bezier(.4,0,.2,1); }
-/* diff open: pull the tree out of center so its graph rail stays in the uncovered left strip */
-.stage-tree.shifted .tree-wrap { margin-left: 0; margin-right: auto; }
+/* left-aligned so opening the diff panel doesn't shift the graph sideways */
+.tree-wrap { max-width: 1100px; margin: 0; padding: 22px 28px 80px; }
 
 .tree-inner { position: relative; }
 .tree-svg { position: absolute; top: 0; left: 0; pointer-events: none; }
@@ -80,7 +79,7 @@
 /* commit rows (HTML over SVG) */
 .trow {
   position: absolute; left: 0; right: 0;
-  cursor: default;
+  cursor: pointer;
   transition: opacity .2s;
 }
 .trow .rowbg { position: absolute; left: 0; right: 0; top: 4px; bottom: 4px; border-radius: 10px; transition: background .12s; }
@@ -119,6 +118,30 @@
 /* uncommitted row */
 .trow.wd .msg { color: var(--orange); font-weight: 600; }
 
+/* uncommitted file rows listed under the working-tree node */
+.wd-file { position: absolute; left: 0; right: 0; display: flex; align-items: center; gap: 9px; padding-right: 12px; cursor: pointer; }
+.wd-file .railpad { flex-shrink: 0; }
+.wd-file::before {
+  content: ''; position: absolute; left: 0; right: 0; top: 2px; bottom: 2px;
+  border-radius: 8px; transition: background .12s;
+}
+.wd-file:hover::before { background: var(--bg-2); }
+.wd-file.active::before { background: var(--accent-dim); box-shadow: inset 0 0 0 1px var(--accent-line); }
+.wd-file .stico {
+  position: relative; z-index: 1; width: 16px; height: 16px; border-radius: 3px; flex-shrink: 0;
+  display: grid; place-items: center; font-size: 10px; font-weight: 800; font-family: var(--mono);
+}
+.wd-file .wd-fpath {
+  position: relative; z-index: 1; min-width: 0; font-family: var(--mono); font-size: 12.5px;
+  color: var(--tx); white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.wd-file .wd-fpath .dir { color: var(--tx-lo); }
+.wd-file .spacer { flex: 1; min-width: 8px; }
+.wd-file .stat { position: relative; z-index: 1; font-size: 11.5px; font-family: var(--mono); flex-shrink: 0; }
+.wd-file .stat .a { color: var(--add); }
+.wd-file .stat .d { color: var(--del); }
+.wd-file .stat .bin { color: var(--tx-lo); }
+
 /* collapse break row */
 .tbreak { position: absolute; left: 0; right: 0; display: flex; align-items: center; cursor: pointer; }
 .tbreak .railpad { flex-shrink: 0; }
@@ -154,10 +177,11 @@
   display: flex; flex-direction: column;
   box-shadow: -10px 0 34px rgba(0, 0, 0, .22);
   transform: translateX(101%);
-  transition: transform .32s cubic-bezier(.4, 0, .2, 1);
+  opacity: 0;
+  transition: opacity .16s ease;
   z-index: 8;
 }
-.diff-panel.open { transform: translateX(0); }
+.diff-panel.open { transform: translateX(0); opacity: 1; }
 .diff-panel .detail-head { border-bottom: 1px solid var(--line); }
 .drawer-resize { position: absolute; left: -3px; top: 0; bottom: 0; width: 7px; cursor: col-resize; z-index: 6; }
 .drawer-resize:hover, .drawer-resize.dragging { background: linear-gradient(to right, transparent 0, var(--accent-line) 3px, var(--accent-line) 4px, transparent 4px); }

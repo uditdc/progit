@@ -1,12 +1,13 @@
 /* The hero tree — ported from the design prototype (TreeGraph.jsx). */
 
 import React from 'react';
+import type { FileDiff, FileStatus } from '../../shared/types';
 import type { LanedCommit, ViewRef } from '../graph/lanes';
 import { avatarColor, initials } from '../lib/highlight';
 import { relativeTime } from '../lib/relative-time';
 import { Icon } from './Icon';
 
-const T_ROW = 52;
+const T_ROW = 62;
 const REF_H = 14; // extra height for the secondary refs line
 const REF_PULL = 10; // refs line tucks up under the main line
 const T_BRK = 34;
@@ -16,6 +17,22 @@ const T_R = 6;
 const RUN_MIN = 4; // collapse same-lane, ref-less runs of >= this many
 const MAX_COL = 12; // lanes past this share the last column so the rail can't crowd out the card
 const BEND = 26; // fixed height of the lane-change S-bend; edges are straight rails elsewhere
+const WD_FILE = 26; // height of each uncommitted-file row listed under the working-tree node
+
+// status glyph + color class, mirroring the diff viewer's StatusIco
+const WD_ICON: Record<FileStatus, [string, string]> = {
+  modified: ['M', 'st-modified'],
+  added: ['A', 'st-added'],
+  deleted: ['D', 'st-deleted'],
+  renamed: ['R', 'st-modified'],
+  untracked: ['U', 'st-untracked'],
+  conflicted: ['!', 'st-deleted'],
+};
+
+function splitPath(p: string): { dir: string; base: string } {
+  const i = p.lastIndexOf('/');
+  return i === -1 ? { dir: '', base: p } : { dir: p.slice(0, i + 1), base: p.slice(i + 1) };
+}
 
 // Edges run as straight vertical rails in the outer (higher-column) lane and turn
 // into the main lane through a short S confined to a BEND-tall band at the join.
@@ -128,6 +145,9 @@ export interface TreeGraphProps {
   onBranchMenu?: (e: React.MouseEvent, r: ViewRef) => void;
   hasUncommitted: boolean;
   wdCount: number;
+  wdFiles: FileDiff[];
+  onSelectFile?: (path: string) => void;
+  activeFilePath?: string | null;
   collapseFocus: boolean;
   focusTipId: string | null;
   wdParentId: string | null;
@@ -160,6 +180,9 @@ export function TreeGraph({
   onBranchMenu,
   hasUncommitted,
   wdCount,
+  wdFiles,
+  onSelectFile,
+  activeFilePath,
   collapseFocus,
   focusTipId,
   wdParentId,
@@ -216,7 +239,9 @@ export function TreeGraph({
   }
 
   // ---- lay out Y (node dot stays centered on the first line) ----
-  let cur = hasUncommitted ? T_ROW : 0;
+  // the working-tree block is the summary row plus one row per uncommitted file
+  const wdBlockH = hasUncommitted ? T_ROW + wdFiles.length * WD_FILE : 0;
+  let cur = wdBlockH;
   const commitY: Record<string, number> = {};
   const breakIdY: Record<string, number> = {};
   const laid: LaidItem[] = [];
@@ -440,6 +465,44 @@ export function TreeGraph({
             </div>
           )}
 
+          {/* uncommitted files — click a file to open its diff */}
+          {hasUncommitted &&
+            wdFiles.map((f, i) => {
+              const { dir, base } = splitPath(f.path);
+              const [ch, cls] = WD_ICON[f.status];
+              const active = selected === '__wd__' && activeFilePath === f.path;
+              return (
+                <div
+                  key={f.path}
+                  className={'wd-file' + (active ? ' active' : '')}
+                  style={{ top: T_ROW + i * WD_FILE, height: WD_FILE }}
+                  title={f.path}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectFile?.(f.path);
+                  }}
+                >
+                  <div className="railpad" style={{ width: cardLeft + 12 }} />
+                  <span className={'stico ' + cls}>{ch}</span>
+                  <span className="wd-fpath">
+                    <span className="dir">{dir}</span>
+                    {base}
+                    {f.origPath && <span className="dir"> ← {f.origPath}</span>}
+                  </span>
+                  <span className="spacer" />
+                  <span className="stat">
+                    {f.binary ? (
+                      <span className="bin">bin</span>
+                    ) : (
+                      <>
+                        <span className="a">+{f.add}</span> <span className="d">−{f.del}</span>
+                      </>
+                    )}
+                  </span>
+                </div>
+              );
+            })}
+
           {/* commit + break rows */}
           {laid.map((it) => {
             if (it.type === 'break') {
@@ -468,6 +531,7 @@ export function TreeGraph({
                 key={c.id}
                 className={'trow' + (c.merge ? ' mergerow' : '') + (sel ? ' sel' : '') + (hi ? '' : ' dim')}
                 style={{ top: it.rowTop, height: it.rowH }}
+                onClick={() => onSelect(c.id)}
                 onContextMenu={(e) => {
                   e.preventDefault();
                   onContext?.(e, c);

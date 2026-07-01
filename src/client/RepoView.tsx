@@ -189,9 +189,31 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   const commitDiffQ = useCommitDiff(repoPath, selectedSha);
   const workingDiffQ = useWorkingDiff(repoPath, hasUncommitted || peekObj !== null, peekObj?.path);
 
+  // one row per uncommitted file for the working-tree node; a partially staged
+  // file appears once with its staged + unstaged stats combined
+  const wdFiles = React.useMemo(() => {
+    const d = workingDiffQ.data;
+    if (!d || peekObj) return [];
+    const byPath = new Map<string, FileDiff>();
+    for (const f of [...d.staged, ...d.unstaged, ...d.untracked]) {
+      const prev = byPath.get(f.path);
+      byPath.set(f.path, prev ? { ...prev, add: prev.add + f.add, del: prev.del + f.del } : f);
+    }
+    return [...byPath.values()];
+  }, [workingDiffQ.data, peekObj]);
+
+  // a working-tree file the user clicked to focus in the diff; nonce re-triggers the scroll
+  const [wdFocus, setWdFocus] = React.useState<{ path: string; n: number } | null>(null);
+
   const selectCommit = React.useCallback((id: string) => {
     setSelected(id);
     setPeekWt(null);
+    if (id === '__wd__') setWdFocus(null);
+  }, []);
+  const selectWdFile = React.useCallback((path: string) => {
+    setSelected('__wd__');
+    setPeekWt(null);
+    setWdFocus((p) => ({ path, n: (p?.n ?? 0) + 1 }));
   }, []);
   const closeDrawer = React.useCallback(() => {
     setSelected(null);
@@ -677,7 +699,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
 
       {/* ---------- tree stage + permanent diff panel ---------- */}
       <div className="v3-stage">
-        <div className={'stage-tree' + (drawerOpen ? ' shifted' : '')}>
+        <div className="stage-tree">
           <TreeGraph
             commits={laned}
             selected={selected}
@@ -697,6 +719,9 @@ export function RepoView({ repoPath }: { repoPath: string }) {
             }}
             hasUncommitted={hasUncommitted}
             wdCount={wdCount}
+            wdFiles={wdFiles}
+            onSelectFile={selectWdFile}
+            activeFilePath={wdFocus?.path ?? null}
             hasMore={logQ.data?.hasMore ?? false}
             loadingMore={logQ.isFetching}
             onLoadMore={loadMore}
@@ -836,6 +861,8 @@ export function RepoView({ repoPath }: { repoPath: string }) {
               staging={detail.kind === 'wd'}
               onStage={detail.kind === 'wd' ? onStage : undefined}
               onStageAll={detail.kind === 'wd' ? onStageAll : undefined}
+              focusPath={detail.kind === 'wd' ? wdFocus?.path ?? null : null}
+              focusNonce={wdFocus?.n ?? 0}
             />
           )}
         </div>

@@ -186,6 +186,7 @@ function FileDiffView({
   onStage,
   open,
   onToggle,
+  innerRef,
 }: {
   file: FileDiff;
   mode: DiffMode;
@@ -194,6 +195,7 @@ function FileDiffView({
   onStage?: (file: FileDiff, staged: boolean) => void;
   open: boolean;
   onToggle: () => void;
+  innerRef?: (el: HTMLDivElement | null) => void;
 }) {
   const [expanded, setExpanded] = React.useState<Record<string, boolean>>({});
   const { dir, base } = splitPath(file.path);
@@ -202,7 +204,7 @@ function FileDiffView({
     [file, open],
   );
   return (
-    <div className="diff-file">
+    <div className="diff-file" ref={innerRef}>
       <div className={'diff-file-head' + (open ? '' : ' collapsed')} onClick={onToggle}>
         {staging && onStage && (
           <span
@@ -309,9 +311,12 @@ export interface DiffViewerProps {
   staging: boolean;
   onStage?: (file: FileDiff, staged: boolean) => void;
   onStageAll?: (files: FileDiff[], staged: boolean) => void;
+  /** When set, expand this file and scroll it into view; bump focusNonce to re-trigger. */
+  focusPath?: string | null;
+  focusNonce?: number;
 }
 
-export function DiffViewer({ groups, mode, staging, onStage, onStageAll }: DiffViewerProps) {
+export function DiffViewer({ groups, mode, staging, onStage, onStageAll, focusPath, focusNonce }: DiffViewerProps) {
   const allFiles = groups.flatMap((g) => g.files);
   const totals = allFiles.reduce((a, f) => ({ add: a.add + f.add, del: a.del + f.del }), { add: 0, del: 0 });
   const stagedFiles = groups.filter((g) => g.staged).flatMap((g) => g.files);
@@ -323,6 +328,15 @@ export function DiffViewer({ groups, mode, staging, onStage, onStageAll }: DiffV
   const isOpen = (f: FileDiff) => open[f.path] ?? false;
   const expandAll = () => setOpen(Object.fromEntries(allFiles.map((f) => [f.path, true])));
   const collapseAll = () => setOpen({});
+
+  // a file clicked in the working-tree view: expand it and bring it into view
+  const fileRefs = React.useRef<Record<string, HTMLDivElement | null>>({});
+  React.useEffect(() => {
+    if (!focusPath) return;
+    setOpen((m) => (m[focusPath] ? m : { ...m, [focusPath]: true }));
+    fileRefs.current[focusPath]?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusPath, focusNonce]);
 
   return (
     <>
@@ -377,6 +391,9 @@ export function DiffViewer({ groups, mode, staging, onStage, onStageAll }: DiffV
                 onStage={onStage}
                 open={isOpen(f)}
                 onToggle={() => setOpen((m) => ({ ...m, [f.path]: !isOpen(f) }))}
+                innerRef={(el) => {
+                  fileRefs.current[f.path] = el;
+                }}
               />
             ))}
           </div>
