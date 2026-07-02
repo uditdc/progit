@@ -88,3 +88,8 @@ export function validateRevision(rev: string): boolean {
 export function validatePath(p: string): boolean {
   return p.length > 0 && !p.includes('\0') && !p.split('/').includes('..');
 }
+
+/** stash@{N} selectors — the only stash revision form the API accepts. */
+export function validateStashRef(ref: string): boolean {
+  return /^stash@\{\d+\}$/.test(ref);
+}

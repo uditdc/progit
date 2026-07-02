@@ -8,6 +8,8 @@ import type {
   FetchBody,
   PushBody,
   StagePathsBody,
+  StashPushBody,
+  StashRefBody,
 } from '../../shared/types';
 
 export function useRepo(path: string) {
@@ -40,6 +42,10 @@ export function useStatus(path: string) {
 
 export function useWorktrees(path: string) {
   return useQuery({ queryKey: ['worktrees', path], queryFn: () => api.worktrees(path) });
+}
+
+export function useStashes(path: string) {
+  return useQuery({ queryKey: ['stashes', path], queryFn: () => api.stashes(path) });
 }
 
 export function useCommitDiff(path: string, sha: string | null) {
@@ -108,5 +114,24 @@ export function useGitActions(path: string, cb: MutationCallbacks) {
   );
   const push = useGitMutation((b: PushBody) => api.push(path, b), (a) => `Pushed ${a.ref ?? 'current branch'}`, cb);
   const pull = useGitMutation((_b: void) => api.pull(path), () => 'Pulled', cb);
-  return { checkout, createBranch, createTag, stage, unstage, commit, uncommit, fetchRemote, push, pull };
+  const stashPush = useGitMutation((b: StashPushBody) => api.stashPush(path, b), () => 'Stashed changes', cb);
+  const stashApply = useGitMutation((b: StashRefBody) => api.stashApply(path, b), () => 'Applied stash', cb);
+  const stashPop = useGitMutation((b: StashRefBody) => api.stashPop(path, b), () => 'Popped stash', cb);
+  const stashDrop = useGitMutation((b: StashRefBody) => api.stashDrop(path, b), () => 'Dropped stash', cb);
+  return {
+    checkout,
+    createBranch,
+    createTag,
+    stage,
+    unstage,
+    commit,
+    uncommit,
+    fetchRemote,
+    push,
+    pull,
+    stashPush,
+    stashApply,
+    stashPop,
+    stashDrop,
+  };
 }

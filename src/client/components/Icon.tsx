@@ -8,6 +8,7 @@ const ICON_PATHS: Record<string, string> = {
   remote: 'M12 2a10 10 0 100 20 10 10 0 000-20zM2 12h20M12 2a15 15 0 010 20M12 2a15 15 0 000 20',
   tag: 'M3 11l8-8 10 10-8 8-10-10zM7 7h.01',
   stash: 'M4 7h16M4 12h16M4 17h16',
+  trash: 'M3 6h18M8 6V4a1 1 0 011-1h6a1 1 0 011 1v2m2 0v14a1 1 0 01-1 1H7a1 1 0 01-1-1V6M10 11v6M14 11v6',
   cube: 'M21 7.5l-9-5-9 5 9 5 9-5zM3 7.5v9l9 5 9-5v-9M12 12.5v10',
   tree: 'M9 3h11M9 9h11M9 15h11M9 21h11M4 4h.01M4 10h.01M4 16h.01',
   worktree: 'M5 3v7m0 0a3 3 0 100 6 3 3 0 000-6zM19 8v6m0 0a3 3 0 100 6 3 3 0 000-6zM5 10c0 5 14 1 14 4',

@@ -119,6 +119,18 @@ export interface WorkingDiffPayload {
   untracked: FileDiff[];
 }
 
+export interface StashEntry {
+  /** stash@{N} selector — stable only within a single list snapshot. */
+  ref: string;
+  index: number;
+  sha: string;
+  /** Reflog subject, e.g. "WIP on main: 1ae932b msg" or "On main: custom". */
+  message: string;
+  /** Branch the stash was taken from, parsed from the subject. */
+  branch: string | null;
+  date: string;
+}
+
 export interface Worktree {
   name: string;
   path: string;
@@ -189,6 +201,18 @@ export interface FetchBody {
 export interface PushBody {
   /** Branch to push; the checked-out branch when omitted. */
   ref?: string;
+}
+
+export interface StashPushBody {
+  /** Optional label; git auto-generates "WIP on <branch>…" when omitted. */
+  message?: string;
+  /** Stash untracked files too — defaults on, matching the app's capture-everything default. */
+  includeUntracked?: boolean;
+}
+
+export interface StashRefBody {
+  /** stash@{N} selector. */
+  ref: string;
 }
 
 export interface CredentialAnswerBody {

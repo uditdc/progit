@@ -24,6 +24,8 @@ export function useLiveUpdates(path: string, onCredential?: (e: CredentialReques
       } catch {
         /* malformed event — refresh everything */
       }
+      // any change can add, remove, or renumber stashes
+      qc.invalidateQueries({ queryKey: ['stashes', path] });
       if (scope === 'refs' || scope === 'all') {
         qc.invalidateQueries({ queryKey: ['log', path] });
         qc.invalidateQueries({ queryKey: ['refs', path] });
