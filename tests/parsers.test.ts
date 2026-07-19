@@ -6,6 +6,7 @@ import { parseRefs } from '../src/server/parse/refs.js';
 import { parseStatus } from '../src/server/parse/status.js';
 import { parseWorktrees } from '../src/server/parse/worktree.js';
 import { parseUnifiedDiff } from '../src/server/parse/unified-diff.js';
+import { parseStashes } from '../src/server/parse/stash.js';
 
 const fixture = (name: string) => readFileSync(join(__dirname, 'fixtures', name), 'utf8');
 
@@ -114,6 +115,39 @@ describe('parseWorktrees', () => {
     expect(wts[0]!.path).toBe('/tmp/progit-rec');
     expect(wts[1]!.branch).toBe('feature/search');
     expect(wts[1]!.head).toMatch(/^[0-9a-f]{40}$/);
+  });
+});
+
+describe('parseStashes', () => {
+  const US = '\x1f';
+  const RS = '\x1e';
+  const sha = 'a'.repeat(40);
+  const rec = (ref: string, subject: string, date: string) => `${ref}${US}${sha}${US}${subject}${US}${date}${RS}`;
+  // git emits records newline-joined; the format terminates each with \x1e
+  const out =
+    rec('stash@{0}', 'WIP on main: 1ae932b release: v0.1.6', '2026-07-01T10:00:00+00:00') +
+    '\n' +
+    rec('stash@{1}', 'On feature/x: hand-written label', '2026-06-30T09:00:00+00:00') +
+    '\n';
+
+  it('parses each entry with ref, index, sha, and date', () => {
+    const stashes = parseStashes(out);
+    expect(stashes).toHaveLength(2);
+    expect(stashes[0]!.ref).toBe('stash@{0}');
+    expect(stashes[0]!.index).toBe(0);
+    expect(stashes[1]!.index).toBe(1);
+    expect(stashes[0]!.sha).toBe(sha);
+    expect(Number.isNaN(Date.parse(stashes[0]!.date))).toBe(false);
+  });
+
+  it('extracts the source branch from both WIP and custom-message subjects', () => {
+    const stashes = parseStashes(out);
+    expect(stashes[0]!.branch).toBe('main');
+    expect(stashes[1]!.branch).toBe('feature/x');
+  });
+
+  it('returns an empty list for no stashes', () => {
+    expect(parseStashes('')).toEqual([]);
   });
 });
 

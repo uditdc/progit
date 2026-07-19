@@ -1,7 +1,7 @@
 /* Repository view — the v3 tree-as-hero shell, scoped to one repo path. */
 
 import React from 'react';
-import type { FileDiff, GitRef, Worktree } from '../shared/types';
+import type { FileDiff, GitRef, StashEntry, Worktree } from '../shared/types';
 import { computeAncestry, computeLanes, type LanedCommit, type ViewRef } from './graph/lanes';
 import { branchColor, LANE_PALETTE } from './graph/colors';
 import {
@@ -11,6 +11,7 @@ import {
   useLogStats,
   useRefs,
   useRepo,
+  useStashes,
   useStatus,
   useWorkingDiff,
   useWorktrees,
@@ -59,6 +60,14 @@ function RefMini({ r }: { r: ViewRef }) {
   );
 }
 
+// strip the "WIP on <branch>: <sha> " / "On <branch>: " reflog prefix — the branch
+// is shown separately, so the label reads as just the change description
+function stashLabel(s: StashEntry): string {
+  const m = /^(?:WIP on|On) [^:]+:\s*(?:[0-9a-f]{7,40}\s+)?(.*)$/.exec(s.message);
+  const rest = m?.[1]?.trim();
+  return rest && rest.length ? rest : s.message;
+}
+
 interface ToastState {
   msg: string;
   error?: boolean;
@@ -77,6 +86,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   const refsQ = useRefs(repoPath);
   const statusQ = useStatus(repoPath);
   const worktreesQ = useWorktrees(repoPath);
+  const stashesQ = useStashes(repoPath);
 
   const repo = repoQ.data;
   const commits = React.useMemo(() => {
@@ -88,6 +98,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   const refs = React.useMemo(() => refsQ.data ?? { local: [], remote: [], tags: [] }, [refsQ.data]);
   const status = statusQ.data;
   const worktrees = worktreesQ.data ?? [];
+  const stashes = stashesQ.data ?? [];
 
   // remember successfully opened repos for the home screen
   React.useEffect(() => {
@@ -239,6 +250,13 @@ export function RepoView({ repoPath }: { repoPath: string }) {
     setBrPop(false);
   };
 
+  const onPopStash = (s: StashEntry) => {
+    actions.stashPop.mutate({ ref: s.ref });
+    setBrPop(false);
+    setBrQuery('');
+  };
+  const onDropStash = (s: StashEntry) => actions.stashDrop.mutate({ ref: s.ref });
+
   const openCreate = (kind: 'branch' | 'tag', baseId: string | null) => {
     setCtx(null);
     setBranchMenu(null);
@@ -288,6 +306,20 @@ export function RepoView({ repoPath }: { repoPath: string }) {
     const body = commitBody.trim();
     actions.commit.mutate(
       { message: body ? `${title}\n\n${body}` : title, amend },
+      {
+        onSuccess: () => {
+          setCommitTitle('');
+          setCommitBody('');
+          setAmend(false);
+        },
+      },
+    );
+  };
+
+  const doStash = () => {
+    const message = commitTitle.trim();
+    actions.stashPush.mutate(
+      { message: message || undefined, includeUntracked: true },
       {
         onSuccess: () => {
           setCommitTitle('');
@@ -418,6 +450,12 @@ export function RepoView({ repoPath }: { repoPath: string }) {
     const fb = (arr: GitRef[]) => (bq ? arr.filter((b) => b.name.toLowerCase().includes(bq)) : arr);
     return { locals: fb(refs.local), remotes: fb(refs.remote), tagList: fb(refs.tags) };
   }, [refs, brQuery]);
+
+  const filteredStashes = React.useMemo(() => {
+    const bq = brQuery.trim().toLowerCase();
+    if (!bq) return stashes;
+    return stashes.filter((s) => s.message.toLowerCase().includes(bq) || (s.branch ?? '').toLowerCase().includes(bq));
+  }, [stashes, brQuery]);
 
   const filteredWorktrees = React.useMemo(() => {
     const bq = brQuery.trim().toLowerCase();
@@ -552,6 +590,30 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                   </span>
                 </div>
               ))}
+              {filteredStashes.length > 0 && <div className="pop-sec">Stashes</div>}
+              {filteredStashes.map((s) => (
+                <div key={s.ref} className="pop-row" onClick={() => onPopStash(s)} title="Pop stash — apply and remove">
+                  <Icon name="stash" size={13} style={{ color: 'var(--tx-mid)', opacity: 0.85, flexShrink: 0 }} />
+                  <div style={{ minWidth: 0 }}>
+                    <div className="nm">{stashLabel(s)}</div>
+                    <div className="sub">
+                      {s.branch ? `on ${s.branch}` : s.ref} · {shortDate(s.date)}
+                    </div>
+                  </div>
+                  <span className="meta">
+                    <button
+                      className="stash-drop"
+                      title="Drop stash — discard without applying"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        onDropStash(s);
+                      }}
+                    >
+                      <Icon name="trash" size={13} />
+                    </button>
+                  </span>
+                </div>
+              ))}
               {showWorktrees && filteredWorktrees.length > 0 && <div className="pop-sec">Worktrees</div>}
               {showWorktrees &&
                 filteredWorktrees.map((w) => (
@@ -577,6 +639,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
               {filteredRefs.locals.length +
                 filteredRefs.remotes.length +
                 filteredRefs.tagList.length +
+                filteredStashes.length +
                 (showWorktrees ? filteredWorktrees.length : 0) ===
                 0 && <div style={{ padding: '14px 12px', fontSize: 13, color: 'var(--tx-lo)', textAlign: 'center' }}>No matches</div>}
             </div>
@@ -811,6 +874,15 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                       Append to last commit
                     </label>
                     <span style={{ flex: 1 }} />
+                    <button
+                      className="tb-btn"
+                      disabled={actions.stashPush.isPending}
+                      style={{ opacity: actions.stashPush.isPending ? 0.45 : 1, height: 32 }}
+                      title="Stash all uncommitted changes (including untracked) — uses the title above as its label"
+                      onClick={doStash}
+                    >
+                      <Icon name="stash" size={13} /> Stash
+                    </button>
                     <button
                       className="tb-btn primary"
                       disabled={!canCommit}

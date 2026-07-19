@@ -12,6 +12,7 @@ import { diffRoutes } from './routes/diff.js';
 import { actionRoutes } from './routes/actions.js';
 import { eventRoutes } from './routes/events.js';
 import { remoteRoutes } from './routes/remote.js';
+import { stashRoutes } from './routes/stash.js';
 
 export interface AppRuntime {
   /** Listening port — set by the CLI once the server is bound; used by the askpass bridge. */
@@ -67,6 +68,7 @@ export function createApp(registry: RepoRegistry, runtime: AppRuntime) {
   api.route('/', actionRoutes(ctx));
   api.route('/', eventRoutes(ctx));
   api.route('/', remoteRoutes(ctx));
+  api.route('/', stashRoutes(ctx));
 
   api.onError((err, c) => {
     if (err instanceof RepoOpenError) {
