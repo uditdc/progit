@@ -1,6 +1,6 @@
 {
   "name": "@udit_v/progit",
-  "version": "0.1.6",
+  "version": "0.2.0",
   "description": "Modern web-based git visualization tool — an ungit successor",
   "type": "module",
   "bin": {
