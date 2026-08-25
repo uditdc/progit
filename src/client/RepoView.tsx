@@ -273,37 +273,52 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   // stage/unstage — renames need both paths when unstaging
   const stagePaths = (f: FileDiff) => [f.path];
   const unstagePaths = (f: FileDiff) => (f.origPath ? [f.path, f.origPath] : [f.path]);
-  // paths the user deliberately excluded — kept unstaged despite the auto-stage default
-  const excluded = React.useRef<Set<string>>(new Set());
+  // paths the user deliberately excluded from the next commit; nothing here is
+  // actually staged in git until the commit action runs — this is UI state only
+  const [excluded, setExcluded] = React.useState<Set<string>>(new Set());
   const onStage = (f: FileDiff, staged: boolean) => {
-    if (staged) {
-      excluded.current.add(f.path);
-      actions.unstage.mutate({ paths: unstagePaths(f) });
-    } else {
-      excluded.current.delete(f.path);
-      actions.stage.mutate({ paths: stagePaths(f) });
-    }
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      if (staged) next.add(f.path);
+      else next.delete(f.path);
+      return next;
+    });
   };
   const onStageAll = (files: FileDiff[], staged: boolean) => {
     if (!files.length) return;
-    for (const f of files) (staged ? excluded.current.add(f.path) : excluded.current.delete(f.path));
-    if (staged) actions.unstage.mutate({ paths: files.flatMap(unstagePaths) });
-    else actions.stage.mutate({ paths: files.flatMap(stagePaths) });
+    setExcluded((prev) => {
+      const next = new Set(prev);
+      for (const f of files) (staged ? next.add(f.path) : next.delete(f.path));
+      return next;
+    });
   };
 
-  // auto-stage all changes by default; excluded files stay unstaged
-  React.useEffect(() => {
+  // files that will be included in the next commit — everything uncommitted
+  // except what the user deliberately excluded; purely a client-side preview
+  const previewIncluded = React.useMemo(() => {
     const d = workingDiffQ.data;
-    if (!d || peekObj) return;
-    const toStage = [...d.unstaged, ...d.untracked].map((f) => f.path).filter((p) => !excluded.current.has(p));
-    if (toStage.length) actions.stage.mutate({ paths: toStage });
-  }, [workingDiffQ.data, peekObj]);
-  const stagedCount = workingDiffQ.data?.staged.length ?? 0;
+    if (!d || peekObj) return [] as FileDiff[];
+    const byPath = new Map<string, FileDiff>();
+    for (const f of [...d.staged, ...d.unstaged, ...d.untracked]) {
+      if (!excluded.has(f.path)) byPath.set(f.path, f);
+    }
+    return [...byPath.values()];
+  }, [workingDiffQ.data, peekObj, excluded]);
+  const stagedCount = previewIncluded.length;
   const canCommit = amend ? !actions.commit.isPending : Boolean(stagedCount && commitTitle.trim());
-  const doCommit = () => {
+  const doCommit = async () => {
     if (!canCommit) return;
     const title = commitTitle.trim();
     const body = commitBody.trim();
+    // stage exactly what the preview showed — and unstage anything excluded
+    // that happens to already be staged — right before committing
+    const d = workingDiffQ.data;
+    if (d) {
+      const toStage = [...d.unstaged, ...d.untracked].filter((f) => !excluded.has(f.path)).flatMap(stagePaths);
+      const toUnstage = d.staged.filter((f) => excluded.has(f.path)).flatMap(unstagePaths);
+      if (toStage.length) await actions.stage.mutateAsync({ paths: [...new Set(toStage)] });
+      if (toUnstage.length) await actions.unstage.mutateAsync({ paths: [...new Set(toUnstage)] });
+    }
     actions.commit.mutate(
       { message: body ? `${title}\n\n${body}` : title, amend },
       {
@@ -311,6 +326,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
           setCommitTitle('');
           setCommitBody('');
           setAmend(false);
+          setExcluded(new Set());
         },
       },
     );
@@ -372,10 +388,19 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   const wdGroups = (): DiffGroup[] => {
     const d = workingDiffQ.data;
     if (!d) return [];
+    if (peekObj) {
+      return [
+        d.staged.length ? { label: 'Staged', files: d.staged, staged: true } : null,
+        d.unstaged.length ? { label: 'Changes', files: d.unstaged, staged: false } : null,
+        d.untracked.length ? { label: 'Untracked', files: d.untracked, staged: false } : null,
+      ].filter(Boolean) as DiffGroup[];
+    }
+    // preview grouping for the current worktree — reflects what would be
+    // staged on commit, not git's actual index (see `excluded` above)
+    const excludedFiles = [...d.staged, ...d.unstaged, ...d.untracked].filter((f) => excluded.has(f.path));
     return [
-      d.staged.length ? { label: 'Staged', files: d.staged, staged: true } : null,
-      d.unstaged.length ? { label: 'Changes', files: d.unstaged, staged: false } : null,
-      d.untracked.length ? { label: 'Untracked', files: d.untracked, staged: false } : null,
+      previewIncluded.length ? { label: 'Staged', files: previewIncluded, staged: true } : null,
+      excludedFiles.length ? { label: 'Excluded', files: excludedFiles, staged: false } : null,
     ].filter(Boolean) as DiffGroup[];
   };
   const selectedCommit = selectedSha ? lanedById.get(selectedSha) : undefined;
