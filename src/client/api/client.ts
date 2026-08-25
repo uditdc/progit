@@ -28,10 +28,20 @@ async function request<T>(url: string, init?: RequestInit): Promise<T> {
   return body as T;
 }
 
-function post<T>(url: string, body: unknown): Promise<T> {
+/** Fetched once and cached — the shared secret the server requires on mutating requests. */
+let tokenPromise: Promise<string> | null = null;
+function getToken(): Promise<string> {
+  if (!tokenPromise) {
+    tokenPromise = request<{ token: string }>('/api/session').then((body) => body.token);
+  }
+  return tokenPromise;
+}
+
+async function post<T>(url: string, body: unknown): Promise<T> {
+  const token = await getToken();
   return request<T>(url, {
     method: 'POST',
-    headers: { 'content-type': 'application/json' },
+    headers: { 'content-type': 'application/json', 'x-progit-token': token },
     body: JSON.stringify(body),
   });
 }
