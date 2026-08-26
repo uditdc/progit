@@ -21,6 +21,15 @@ export interface LanedCommit extends Commit {
 
 const GUARD = 200_000;
 
+/** Visit-step counter for the memoized fork-depth walk, exposed only for perf regression tests. */
+let forkDepthWalkSteps = 0;
+export function __resetForkDepthWalkSteps(): void {
+  forkDepthWalkSteps = 0;
+}
+export function __getForkDepthWalkSteps(): number {
+  return forkDepthWalkSteps;
+}
+
 export function computeLanes(
   commits: Commit[],
   refs: RefsPayload,
@@ -80,16 +89,37 @@ export function computeLanes(
     depth: number;
     priority: number;
   }
+  // Fork-depth resolution walks each ref's first-parent chain up to the trunk. Branches
+  // sharing history (e.g. stacked feature branches, or old lines that never merged) would
+  // otherwise re-walk the same shared chain once per ref. Memoize by commit sha, with path
+  // compression, so any given commit is walked at most once across all candidate refs.
+  const forkDepthMemo = new Map<string, number>();
+  const forkDepth = (tip: string): number => {
+    const path: string[] = [];
+    let fid: string | undefined = tip;
+    let g = 0;
+    while (fid && byId.has(fid) && !trunkIndex.has(fid) && !forkDepthMemo.has(fid) && g++ < GUARD) {
+      forkDepthWalkSteps++;
+      path.push(fid);
+      fid = byId.get(fid)!.parents[0];
+    }
+    const resolved =
+      fid !== undefined && trunkIndex.has(fid)
+        ? trunkIndex.get(fid)!
+        : fid !== undefined && forkDepthMemo.has(fid)
+          ? forkDepthMemo.get(fid)!
+          : Number.MAX_SAFE_INTEGER;
+    for (const p of path) forkDepthMemo.set(p, resolved);
+    return resolved;
+  };
+
   const seenTip = new Set<string>(startTip ? [startTip] : []);
   const cands: Cand[] = [];
   const addCand = (ref: GitRef, priority: number) => {
     if (!ref.tip || !byId.has(ref.tip) || seenTip.has(ref.tip)) return;
     if (currentRef && ref.name === currentRef) return;
     seenTip.add(ref.tip);
-    let fid: string | undefined = ref.tip;
-    let g = 0;
-    while (fid && byId.has(fid) && !trunkIndex.has(fid) && g++ < GUARD) fid = byId.get(fid)!.parents[0];
-    const depth = fid !== undefined && trunkIndex.has(fid) ? trunkIndex.get(fid)! : Number.MAX_SAFE_INTEGER;
+    const depth = forkDepth(ref.tip);
     cands.push({ ref, depth, priority });
   };
   for (const b of refs.local) addCand(b, 0);

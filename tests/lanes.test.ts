@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { computeAncestry, computeLanes } from '../src/client/graph/lanes.js';
+import {
+  __getForkDepthWalkSteps,
+  __resetForkDepthWalkSteps,
+  computeAncestry,
+  computeLanes,
+} from '../src/client/graph/lanes.js';
 import type { Commit, GitRef, RefsPayload } from '../src/shared/types.js';
 
 const C = (id: string, parents: string[], msg = id): Commit => ({
@@ -91,6 +96,38 @@ describe('computeLanes', () => {
     const commits = [C('m1', []), C('orphan', [])];
     const laned = computeLanes(commits, refs([local('main', 'm1', true)]), 'main');
     expect(laned.find((c) => c.id === 'orphan')!.col).toBeGreaterThan(0);
+  });
+
+  it('memoizes the fork-depth walk across branches sharing history (bounded visit count)', () => {
+    // A long side chain (300 commits) with no connection to trunk, so fork-depth
+    // resolution always exhausts history instead of hitting trunkIndex directly.
+    // 50 branches point at tips spread evenly across that chain, so without
+    // memoization each branch would re-walk its own tail of the shared chain,
+    // and the total walk cost would scale with refs * chain length.
+    const CHAIN_LEN = 300;
+    const BRANCH_COUNT = 50;
+    const side: Commit[] = [];
+    for (let i = 0; i < CHAIN_LEN; i++) {
+      side.push(C(`s${i}`, i === 0 ? [] : [`s${i - 1}`]));
+    }
+    const main = C('m0', []); // disconnected from the side chain
+    const commits = [main, ...side];
+
+    const branches: GitRef[] = [local('main', 'm0', true)];
+    for (let i = 0; i < BRANCH_COUNT; i++) {
+      const tipIdx = Math.floor((i * CHAIN_LEN) / BRANCH_COUNT);
+      branches.push(local(`branch-${i}`, `s${tipIdx}`));
+    }
+
+    __resetForkDepthWalkSteps();
+    const laned = computeLanes(commits, refs(branches), 'main');
+    const steps = __getForkDepthWalkSteps();
+
+    // Every distinct commit on the shared chain is walked at most once; a naive
+    // per-ref walk (no memoization) would cost on the order of
+    // BRANCH_COUNT * CHAIN_LEN / 2 (~7500) steps for this fixture.
+    expect(steps).toBeLessThanOrEqual(CHAIN_LEN + BRANCH_COUNT);
+    expect(laned).toHaveLength(commits.length);
   });
 });
 
