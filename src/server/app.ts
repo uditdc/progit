@@ -42,8 +42,21 @@ export function createApp(registry: RepoRegistry, runtime: AppRuntime) {
     },
   };
 
+  // shared-secret gate for mutating requests — a cross-origin page can't read
+  // the token below (blocked by same-origin policy) so it can't forge the header.
+  api.use('/*', async (c, next) => {
+    const mutating = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(c.req.method);
+    if (mutating && c.req.header('x-progit-token') !== runtime.token) {
+      return c.json({ error: 'Unauthorized' }, 401);
+    }
+    await next();
+  });
+
   // identity probe — lets a second CLI invocation detect a running progit and reuse it
   api.get('/ping', (c) => c.json({ progit: true }));
+
+  // fetched once by the client on startup and echoed back as the mutating-request header
+  api.get('/session', (c) => c.json({ token: runtime.token }));
 
   api.get('/repo', async (c) => {
     const { git, root } = await ctx.repo(c);
