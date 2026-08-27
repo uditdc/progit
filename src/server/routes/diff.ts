@@ -9,6 +9,27 @@ import type { CommitDiffPayload, FileDiff, WorkingDiffPayload } from '../../shar
 
 const DIFF_ARGS = ['--no-color', '--find-renames'];
 
+/** Max concurrent `git diff --no-index` subprocesses when diffing untracked files. */
+const UNTRACKED_DIFF_CONCURRENCY = 8;
+
+/** Runs `fn` over `items` with at most `limit` calls in flight at once. */
+export async function mapWithConcurrency<T, R>(
+  items: T[],
+  limit: number,
+  fn: (item: T) => Promise<R>,
+): Promise<R[]> {
+  const results = new Array<R>(items.length);
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const i = next++;
+      results[i] = await fn(items[i]!);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, worker));
+  return results;
+}
+
 export function diffRoutes(ctx: AppContext) {
   const r = new Hono();
 
@@ -37,19 +58,17 @@ export function diffRoutes(ctx: AppContext) {
     ]);
     const status = parseStatus(statusOut);
     const untracked: FileDiff[] = (
-      await Promise.all(
-        status.untracked.map(async (f) => {
-          const out = await repo.git.read(
-            ['diff', '--no-color', '--no-index', '--', '/dev/null', join(cwd, f.path)],
-            { cwd, okCodes: [0, 1] },
-          );
-          const parsed = parseUnifiedDiff(out, 'untracked');
-          const fd = parsed[0];
-          if (!fd) return null;
-          fd.path = f.path;
-          return fd;
-        }),
-      )
+      await mapWithConcurrency(status.untracked, UNTRACKED_DIFF_CONCURRENCY, async (f) => {
+        const out = await repo.git.read(
+          ['diff', '--no-color', '--no-index', '--', '/dev/null', join(cwd, f.path)],
+          { cwd, okCodes: [0, 1] },
+        );
+        const parsed = parseUnifiedDiff(out, 'untracked');
+        const fd = parsed[0];
+        if (!fd) return null;
+        fd.path = f.path;
+        return fd;
+      })
     ).filter((f): f is FileDiff => f !== null);
     return c.json({
       staged: parseUnifiedDiff(stagedOut),
