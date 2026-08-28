@@ -2,14 +2,23 @@ import React from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import type { ChangeEvent, CredentialRequestEvent } from '../../shared/types';
 
+export type ConnectionState = 'connected' | 'reconnecting';
+
 /** Subscribes to the repo's SSE feed: change events invalidate queries,
-    credential events surface the askpass modal. */
-export function useLiveUpdates(path: string, onCredential?: (e: CredentialRequestEvent) => void) {
+    credential events surface the askpass modal. Returns the live-connection
+    state so callers can surface a disconnect/reconnecting indicator — the
+    browser retries a dropped EventSource on its own, so 'reconnecting' just
+    tracks the gap between an 'error' and the next 'open'. */
+export function useLiveUpdates(path: string, onCredential?: (e: CredentialRequestEvent) => void): ConnectionState {
   const qc = useQueryClient();
   const credRef = React.useRef(onCredential);
   credRef.current = onCredential;
+  const [connection, setConnection] = React.useState<ConnectionState>('connected');
   React.useEffect(() => {
+    setConnection('connected');
     const es = new EventSource('/api/events?path=' + encodeURIComponent(path));
+    es.addEventListener('open', () => setConnection('connected'));
+    es.addEventListener('error', () => setConnection('reconnecting'));
     es.addEventListener('credential', (e) => {
       try {
         credRef.current?.(JSON.parse((e as MessageEvent).data) as CredentialRequestEvent);
@@ -39,4 +48,5 @@ export function useLiveUpdates(path: string, onCredential?: (e: CredentialReques
     });
     return () => es.close();
   }, [qc, path]);
+  return connection;
 }
