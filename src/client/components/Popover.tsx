@@ -1,4 +1,5 @@
 import React from 'react';
+import { useFocusTrap } from '../lib/a11y';
 
 export function Pop({
   open,
@@ -11,6 +12,8 @@ export function Pop({
   children: React.ReactNode;
   style?: React.CSSProperties;
 }) {
+  const popRef = React.useRef<HTMLDivElement>(null);
+  useFocusTrap(popRef, open, onClose);
   React.useEffect(() => {
     if (!open) return;
     const h = () => onClose();
@@ -19,7 +22,7 @@ export function Pop({
   }, [open, onClose]);
   if (!open) return null;
   return (
-    <div className="pop" style={style} onClick={(e) => e.stopPropagation()}>
+    <div ref={popRef} className="pop" role="dialog" style={style} onClick={(e) => e.stopPropagation()}>
       {children}
     </div>
   );

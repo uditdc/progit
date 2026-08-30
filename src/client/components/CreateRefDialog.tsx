@@ -2,6 +2,7 @@ import React from 'react';
 import type { LanedCommit } from '../graph/lanes';
 import { REF_NAME_RE } from '../../shared/types';
 import { Icon } from './Icon';
+import { useFocusTrap } from '../lib/a11y';
 
 export function CreateRefDialog({
   kind,
@@ -21,6 +22,9 @@ export function CreateRefDialog({
   const [name, setName] = React.useState('');
   const [checkout, setCheckout] = React.useState(true);
   const inp = React.useRef<HTMLInputElement>(null);
+  const modalRef = React.useRef<HTMLDivElement>(null);
+  const titleId = React.useId();
+  useFocusTrap(modalRef, true, onCancel);
   React.useEffect(() => {
     const id = setTimeout(() => inp.current?.focus(), 30);
     return () => clearTimeout(id);
@@ -35,8 +39,15 @@ export function CreateRefDialog({
   };
   return (
     <div className="modal-scrim" onMouseDown={onCancel}>
-      <div className="modal fade-in" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="modal-head">
+      <div
+        ref={modalRef}
+        className="modal fade-in"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="modal-head" id={titleId}>
           {isBranch ? (
             <span style={{ width: 11, height: 11, borderRadius: '50%', background: nextColor }} />
           ) : (

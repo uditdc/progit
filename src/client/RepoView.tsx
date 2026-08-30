@@ -724,7 +724,13 @@ export function RepoView({ repoPath }: { repoPath: string }) {
             <Icon name={settings.theme === 'dark' ? 'sun' : 'moon'} size={14} />
           </button>
           <div className="wt-switch" onClick={(e) => e.stopPropagation()} style={{ position: 'relative' }}>
-            <button className="tb-btn" onClick={() => setSetPop((v) => !v)} title="Settings">
+            <button
+              className="tb-btn"
+              onClick={() => setSetPop((v) => !v)}
+              title="Settings"
+              aria-haspopup="dialog"
+              aria-expanded={setPop}
+            >
               <Icon name="gear" size={13} />
             </button>
             <Pop open={setPop} onClose={() => setSetPop(false)} style={{ right: 0, top: 40, width: 260 }}>
