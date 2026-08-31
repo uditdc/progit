@@ -314,9 +314,27 @@ export interface DiffViewerProps {
   /** When set, expand this file and scroll it into view; bump focusNonce to re-trigger. */
   focusPath?: string | null;
   focusNonce?: number;
+  /** Re-fetches the diff with `git diff -w` when on. */
+  ignoreWhitespace: boolean;
+  onToggleIgnoreWhitespace: () => void;
+  /** Pure CSS — wraps long lines instead of letting them run off-screen. */
+  wordWrap: boolean;
+  onToggleWordWrap: () => void;
 }
 
-export function DiffViewer({ groups, mode, staging, onStage, onStageAll, focusPath, focusNonce }: DiffViewerProps) {
+export function DiffViewer({
+  groups,
+  mode,
+  staging,
+  onStage,
+  onStageAll,
+  focusPath,
+  focusNonce,
+  ignoreWhitespace,
+  onToggleIgnoreWhitespace,
+  wordWrap,
+  onToggleWordWrap,
+}: DiffViewerProps) {
   const allFiles = groups.flatMap((g) => g.files);
   const totals = allFiles.reduce((a, f) => ({ add: a.add + f.add, del: a.del + f.del }), { add: 0, del: 0 });
   const stagedFiles = groups.filter((g) => g.staged).flatMap((g) => g.files);
@@ -361,6 +379,14 @@ export function DiffViewer({ groups, mode, staging, onStage, onStageAll, focusPa
         </span>
         <span style={{ flex: 1 }} />
         <div className="seg">
+          <button className={ignoreWhitespace ? 'on' : ''} title="Ignore whitespace changes (git diff -w)" onClick={onToggleIgnoreWhitespace}>
+            Ignore WS
+          </button>
+          <button className={wordWrap ? 'on' : ''} title="Wrap long lines" onClick={onToggleWordWrap}>
+            Wrap
+          </button>
+        </div>
+        <div className="seg">
           <button onClick={expandAll}>
             <Icon name="chevron" size={12} style={{ marginRight: 4, verticalAlign: '-2px' }} />
             Expand all
@@ -372,7 +398,7 @@ export function DiffViewer({ groups, mode, staging, onStage, onStageAll, focusPa
         </div>
       </div>
 
-      <div className="detail-body">
+      <div className={'detail-body' + (wordWrap ? ' wrap-lines' : '')}>
         {groups.map((g, gi) => (
           <div key={gi}>
             {g.label && (

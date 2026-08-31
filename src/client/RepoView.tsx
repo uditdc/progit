@@ -197,8 +197,8 @@ export function RepoView({ repoPath }: { repoPath: string }) {
   // ---- detail / drawer ----
   const peekObj = peekWt ? worktrees.find((w) => w.path === peekWt) ?? null : null;
   const selectedSha = selected && selected !== '__wd__' ? selected : null;
-  const commitDiffQ = useCommitDiff(repoPath, selectedSha);
-  const workingDiffQ = useWorkingDiff(repoPath, hasUncommitted || peekObj !== null, peekObj?.path);
+  const commitDiffQ = useCommitDiff(repoPath, selectedSha, settings.ignoreWhitespace);
+  const workingDiffQ = useWorkingDiff(repoPath, hasUncommitted || peekObj !== null, peekObj?.path, settings.ignoreWhitespace);
 
   // one row per uncommitted file for the working-tree node; a partially staged
   // file appears once with its staged + unstaged stats combined
@@ -960,6 +960,10 @@ export function RepoView({ repoPath }: { repoPath: string }) {
               onStageAll={detail.kind === 'wd' ? onStageAll : undefined}
               focusPath={detail.kind === 'wd' ? wdFocus?.path ?? null : null}
               focusNonce={wdFocus?.n ?? 0}
+              ignoreWhitespace={settings.ignoreWhitespace}
+              onToggleIgnoreWhitespace={() => setSetting('ignoreWhitespace', !settings.ignoreWhitespace)}
+              wordWrap={settings.wordWrap}
+              onToggleWordWrap={() => setSetting('wordWrap', !settings.wordWrap)}
             />
           )}
         </div>

@@ -50,9 +50,12 @@ export const api = {
   status: (path: string, worktree?: string) =>
     request<StatusPayload>(`/api/status?${q(path, worktree ? { worktree } : undefined)}`),
   worktrees: (path: string) => request<Worktree[]>(`/api/worktrees?${q(path)}`),
-  commitDiff: (path: string, sha: string) => request<CommitDiffPayload>(`/api/diff/commit/${sha}?${q(path)}`),
-  workingDiff: (path: string, worktree?: string) =>
-    request<WorkingDiffPayload>(`/api/diff/working?${q(path, worktree ? { worktree } : undefined)}`),
+  commitDiff: (path: string, sha: string, ignoreWhitespace?: boolean) =>
+    request<CommitDiffPayload>(`/api/diff/commit/${sha}?${q(path, ignoreWhitespace ? { w: '1' } : undefined)}`),
+  workingDiff: (path: string, worktree?: string, ignoreWhitespace?: boolean) =>
+    request<WorkingDiffPayload>(
+      `/api/diff/working?${q(path, { ...(worktree ? { worktree } : {}), ...(ignoreWhitespace ? { w: '1' } : {}) })}`,
+    ),
   checkout: (path: string, body: CheckoutBody) => post<{ ok: true }>(`/api/checkout?${q(path)}`, body),
   createBranch: (path: string, body: CreateBranchBody) => post<{ ok: true }>(`/api/branches?${q(path)}`, body),
   createTag: (path: string, body: CreateTagBody) => post<{ ok: true }>(`/api/tags?${q(path)}`, body),
