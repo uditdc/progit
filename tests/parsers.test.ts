@@ -106,6 +106,30 @@ describe('parseStatus', () => {
     const out = parseStatus('# branch.oid abc\0# branch.head (detached)\0');
     expect(out.branch).toBeNull();
   });
+
+  it('classifies conflicted entries with their conflict kind', () => {
+    const conflict = status.conflicted.find((f) => f.path === 'src/conflict.ts')!;
+    expect(conflict.status).toBe('conflicted');
+    expect(conflict.conflictKind).toBe('both-modified');
+  });
+
+  it('maps each unmerged XY code to its conflict kind', () => {
+    const cases: Array<[string, string]> = [
+      ['DD', 'both-deleted'],
+      ['AA', 'both-added'],
+      ['AU', 'added-by-us'],
+      ['UA', 'added-by-them'],
+      ['DU', 'deleted-by-us'],
+      ['UD', 'deleted-by-them'],
+      ['UU', 'both-modified'],
+    ];
+    for (const [xy, kind] of cases) {
+      const out = parseStatus(
+        `# branch.head main\0u ${xy} N... 100644 100644 100644 100644 1111111111111111111111111111111111111111 2222222222222222222222222222222222222222 3333333333333333333333333333333333333333 f.ts\0`,
+      );
+      expect(out.conflicted[0]!.conflictKind).toBe(kind);
+    }
+  });
 });
 
 describe('parseWorktrees', () => {

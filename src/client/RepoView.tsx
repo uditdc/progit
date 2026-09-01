@@ -24,6 +24,7 @@ import { navigateHome, pushRecentRepo } from './lib/router';
 import { Icon } from './components/Icon';
 import { TreeGraph } from './components/TreeGraph';
 import { DiffViewer, type DiffGroup } from './components/DiffViewer';
+import { ConflictPanel } from './components/ConflictPanel';
 import { Pop } from './components/Popover';
 import { ContextMenu, type MenuAction } from './components/ContextMenu';
 import { CreateRefDialog } from './components/CreateRefDialog';
@@ -942,6 +943,7 @@ export function RepoView({ repoPath }: { repoPath: string }) {
                 </div>
               </div>
             )}
+          {detail.kind === 'wd' && status && status.conflicted.length > 0 && <ConflictPanel files={status.conflicted} />}
           {detail.kind === 'empty' ? (
             <div className="detail-empty">
               <div>
