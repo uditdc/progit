@@ -8,6 +8,8 @@ export interface Settings {
   collapse: boolean;
   accent: string;
   theme: Theme;
+  ignoreWhitespace: boolean;
+  wordWrap: boolean;
 }
 
 /* Accents are hue-driven: each theme picks its own lightness so the same accent
@@ -25,7 +27,14 @@ export const ACCENTS: Record<string, Accent> = {
   orange: { swatch: 'oklch(0.68 0.15 65)', h: 65, c: 0.15 },
 };
 
-const DEFAULTS: Settings = { diffMode: 'inline', collapse: true, accent: 'green', theme: 'dark' };
+const DEFAULTS: Settings = {
+  diffMode: 'inline',
+  collapse: true,
+  accent: 'green',
+  theme: 'dark',
+  ignoreWhitespace: false,
+  wordWrap: false,
+};
 const KEY = 'progit_settings';
 
 function load(): Settings {

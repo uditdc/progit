@@ -312,6 +312,7 @@ body {
 .statbar i { width: 6px; height: 6px; border-radius: 1px; display: inline-block; }
 
 .detail-body { flex: 1; overflow-y: auto; min-height: 0; }
+.detail-body.wrap-lines .ctext { white-space: pre-wrap; word-break: break-word; }
 
 /* changed files list */
 .files { border-bottom: 1px solid var(--line); }

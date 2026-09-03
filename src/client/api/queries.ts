@@ -49,18 +49,18 @@ export function useStashes(path: string) {
   return useQuery({ queryKey: ['stashes', path], queryFn: () => api.stashes(path) });
 }
 
-export function useCommitDiff(path: string, sha: string | null) {
+export function useCommitDiff(path: string, sha: string | null, ignoreWhitespace = false) {
   return useQuery({
-    queryKey: ['diff', path, 'commit', sha],
-    queryFn: () => api.commitDiff(path, sha!),
+    queryKey: ['diff', path, 'commit', sha, ignoreWhitespace],
+    queryFn: () => api.commitDiff(path, sha!, ignoreWhitespace),
     enabled: sha !== null,
   });
 }
 
-export function useWorkingDiff(path: string, enabled: boolean, worktree?: string) {
+export function useWorkingDiff(path: string, enabled: boolean, worktree?: string, ignoreWhitespace = false) {
   return useQuery({
-    queryKey: ['diff', path, 'working', worktree ?? null],
-    queryFn: () => api.workingDiff(path, worktree),
+    queryKey: ['diff', path, 'working', worktree ?? null, ignoreWhitespace],
+    queryFn: () => api.workingDiff(path, worktree, ignoreWhitespace),
     enabled,
   });
 }

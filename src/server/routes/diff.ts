@@ -37,13 +37,14 @@ export function diffRoutes(ctx: AppContext) {
     const { git } = await ctx.repo(c);
     const sha = c.req.param('sha');
     if (!validateRevision(sha)) return c.json({ error: 'Invalid revision' }, 400);
+    const args = c.req.query('w') === '1' ? [...DIFF_ARGS, '-w'] : DIFF_ARGS;
     const parents = (await git.read(['rev-list', '--parents', '-n', '1', sha])).trim().split(' ');
     let out: string;
     if (parents.length > 2) {
       // merge commit — show the first-parent diff
-      out = await git.read(['diff', ...DIFF_ARGS, `${sha}^1`, sha]);
+      out = await git.read(['diff', ...args, `${sha}^1`, sha]);
     } else {
-      out = await git.read(['diff-tree', '-p', '--root', ...DIFF_ARGS, sha]);
+      out = await git.read(['diff-tree', '-p', '--root', ...args, sha]);
     }
     return c.json({ sha, files: parseUnifiedDiff(out) } satisfies CommitDiffPayload);
   });
@@ -51,9 +52,10 @@ export function diffRoutes(ctx: AppContext) {
   r.get('/diff/working', async (c) => {
     const repo = await ctx.repo(c);
     const cwd = await resolveWorktreeCwd(repo, c.req.query('worktree'));
+    const args = c.req.query('w') === '1' ? [...DIFF_ARGS, '-w'] : DIFF_ARGS;
     const [unstagedOut, stagedOut, statusOut] = await Promise.all([
-      repo.git.read(['diff', ...DIFF_ARGS], { cwd, okCodes: [0, 1] }),
-      repo.git.read(['diff', '--cached', ...DIFF_ARGS], { cwd, okCodes: [0, 1] }),
+      repo.git.read(['diff', ...args], { cwd, okCodes: [0, 1] }),
+      repo.git.read(['diff', '--cached', ...args], { cwd, okCodes: [0, 1] }),
       repo.git.read(['status', '--porcelain=v2', '-z', '--untracked-files=all'], { cwd }),
     ]);
     const status = parseStatus(statusOut);
