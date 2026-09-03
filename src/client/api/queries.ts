@@ -1,6 +1,7 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient, type QueryClient } from '@tanstack/react-query';
 import { api } from './client';
 import type {
+  ChangeScope,
   CheckoutBody,
   CommitBody,
   CreateBranchBody,
@@ -69,55 +70,136 @@ export interface MutationCallbacks {
   onError?: (msg: string) => void;
 }
 
+/** Mirrors each git route's own bus.emit(scope) call (see server/routes/*.ts) so a
+    mutation only refetches the query groups its git command could actually change. */
+export function invalidateScope(qc: QueryClient, path: string, scope: ChangeScope, invalidateStashes = false) {
+  if (scope === 'refs' || scope === 'all') {
+    qc.invalidateQueries({ queryKey: ['log', path] });
+    qc.invalidateQueries({ queryKey: ['refs', path] });
+    qc.invalidateQueries({ queryKey: ['repo', path] });
+  }
+  if (scope === 'index' || scope === 'worktree' || scope === 'all') {
+    qc.invalidateQueries({ queryKey: ['status', path] });
+    qc.invalidateQueries({ queryKey: ['worktrees', path] });
+    qc.invalidateQueries({ queryKey: ['diff', path, 'working'] });
+  }
+  if (invalidateStashes) qc.invalidateQueries({ queryKey: ['stashes', path] });
+}
+
 function useGitMutation<TArgs>(
   fn: (args: TArgs) => Promise<unknown>,
   successMsg: (args: TArgs) => string,
   cb: MutationCallbacks,
+  path: string,
+  scope: ChangeScope,
+  invalidateStashes = false,
 ) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: fn,
     onSuccess: (_d, args) => cb.onSuccess?.(successMsg(args)),
     onError: (err) => cb.onError?.(err instanceof Error ? err.message : String(err)),
-    onSettled: () => qc.invalidateQueries(),
+    onSettled: () => invalidateScope(qc, path, scope, invalidateStashes),
   });
 }
 
 export function useGitActions(path: string, cb: MutationCallbacks) {
-  const checkout = useGitMutation((b: CheckoutBody) => api.checkout(path, b), (a) => `Checked out ${a.ref}`, cb);
+  const checkout = useGitMutation(
+    (b: CheckoutBody) => api.checkout(path, b),
+    (a) => `Checked out ${a.ref}`,
+    cb,
+    path,
+    'refs',
+  );
   const createBranch = useGitMutation(
     (b: CreateBranchBody) => api.createBranch(path, b),
     (a) => `Created branch ${a.name}${a.checkout ? ' · checked out' : ''}`,
     cb,
+    path,
+    'refs',
   );
-  const createTag = useGitMutation((b: CreateTagBody) => api.createTag(path, b), (a) => `Created tag ${a.name}`, cb);
+  const createTag = useGitMutation(
+    (b: CreateTagBody) => api.createTag(path, b),
+    (a) => `Created tag ${a.name}`,
+    cb,
+    path,
+    'refs',
+  );
   const stage = useGitMutation(
     (b: StagePathsBody) => api.stage(path, b),
     (a) => (a.paths.length > 1 ? `Staged ${a.paths.length} files` : `Staged ${a.paths[0]}`),
     cb,
+    path,
+    'index',
   );
   const unstage = useGitMutation(
     (b: StagePathsBody) => api.unstage(path, b),
     (a) => (a.paths.length > 1 ? `Unstaged ${a.paths.length} files` : `Unstaged ${a.paths[0]}`),
     cb,
+    path,
+    'index',
   );
   const commit = useGitMutation(
     (b: CommitBody) => api.commit(path, b),
     (a) => (a.amend ? 'Amended last commit' : 'Committed staged changes'),
     cb,
+    path,
+    'all',
   );
-  const uncommit = useGitMutation((_b: void) => api.uncommit(path), () => 'Uncommitted — changes kept staged', cb);
+  const uncommit = useGitMutation(
+    (_b: void) => api.uncommit(path),
+    () => 'Uncommitted — changes kept staged',
+    cb,
+    path,
+    'all',
+  );
   const fetchRemote = useGitMutation(
     (b: FetchBody) => api.fetchRemote(path, b),
     (a) => `Fetched ${a.remote ?? 'all remotes'}`,
     cb,
+    path,
+    'refs',
   );
-  const push = useGitMutation((b: PushBody) => api.push(path, b), (a) => `Pushed ${a.ref ?? 'current branch'}`, cb);
-  const pull = useGitMutation((_b: void) => api.pull(path), () => 'Pulled', cb);
-  const stashPush = useGitMutation((b: StashPushBody) => api.stashPush(path, b), () => 'Stashed changes', cb);
-  const stashApply = useGitMutation((b: StashRefBody) => api.stashApply(path, b), () => 'Applied stash', cb);
-  const stashPop = useGitMutation((b: StashRefBody) => api.stashPop(path, b), () => 'Popped stash', cb);
-  const stashDrop = useGitMutation((b: StashRefBody) => api.stashDrop(path, b), () => 'Dropped stash', cb);
+  const push = useGitMutation(
+    (b: PushBody) => api.push(path, b),
+    (a) => `Pushed ${a.ref ?? 'current branch'}`,
+    cb,
+    path,
+    'refs',
+  );
+  const pull = useGitMutation((_b: void) => api.pull(path), () => 'Pulled', cb, path, 'all');
+  const stashPush = useGitMutation(
+    (b: StashPushBody) => api.stashPush(path, b),
+    () => 'Stashed changes',
+    cb,
+    path,
+    'all',
+    true,
+  );
+  const stashApply = useGitMutation(
+    (b: StashRefBody) => api.stashApply(path, b),
+    () => 'Applied stash',
+    cb,
+    path,
+    'all',
+    true,
+  );
+  const stashPop = useGitMutation(
+    (b: StashRefBody) => api.stashPop(path, b),
+    () => 'Popped stash',
+    cb,
+    path,
+    'all',
+    true,
+  );
+  const stashDrop = useGitMutation(
+    (b: StashRefBody) => api.stashDrop(path, b),
+    () => 'Dropped stash',
+    cb,
+    path,
+    'refs',
+    true,
+  );
   return {
     checkout,
     createBranch,
