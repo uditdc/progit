@@ -1,5 +1,6 @@
 import React from 'react';
 import { Icon } from './Icon';
+import { useFocusTrap } from '../lib/a11y';
 
 export function CredentialDialog({
   prompt,
@@ -12,15 +13,25 @@ export function CredentialDialog({
 }) {
   const [value, setValue] = React.useState('');
   const inp = React.useRef<HTMLInputElement>(null);
+  const modalRef = React.useRef<HTMLDivElement>(null);
+  const titleId = React.useId();
   const secret = /pass|token|secret/i.test(prompt);
+  useFocusTrap(modalRef, true, onCancel);
   React.useEffect(() => {
     const id = setTimeout(() => inp.current?.focus(), 30);
     return () => clearTimeout(id);
   }, []);
   return (
     <div className="modal-scrim" onMouseDown={onCancel}>
-      <div className="modal fade-in" onMouseDown={(e) => e.stopPropagation()}>
-        <div className="modal-head">
+      <div
+        ref={modalRef}
+        className="modal fade-in"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={titleId}
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <div className="modal-head" id={titleId}>
           <Icon name="remote" size={14} style={{ color: 'var(--accent)' }} />
           Git needs credentials
         </div>
