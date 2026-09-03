@@ -334,6 +334,13 @@ body {
 .stage-btn:hover { background: var(--bg-3); color: var(--tx-hi); }
 .stage-btn.unstage { color: var(--orange); }
 
+/* conflict panel — visualization of unmerged paths, no resolve actions yet */
+.conflict-panel { border-bottom: 1px solid var(--line); background: var(--del-bg); }
+.conflict-label { color: var(--del); }
+.conflict-row { cursor: default; }
+.conflict-row:hover { background: transparent; }
+.conflict-kind { font-size: 11px; font-family: var(--mono); color: var(--del); border: 1px solid color-mix(in oklch, var(--del) 40%, transparent); border-radius: 4px; padding: 1px 6px; white-space: nowrap; }
+
 /* diff code */
 .diff-file { border-bottom: 1px solid var(--line); }
 .diff-file-head { position: sticky; top: 0; z-index: 2; display: flex; align-items: center; gap: 9px; padding: 7px 14px; background: var(--bg-2); border-bottom: 1px solid var(--line); cursor: pointer; }

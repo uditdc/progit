@@ -57,10 +57,26 @@ export interface LogPayload {
 
 export type FileStatus = 'modified' | 'added' | 'deleted' | 'renamed' | 'untracked' | 'conflicted';
 
+/**
+ * Which side(s) touched a conflicted path, derived from the porcelain v2 `u`
+ * entry's XY code. Consumed by merge/rebase/cherry-pick/revert UI to explain
+ * a conflict without running `git diff` on it.
+ */
+export type ConflictKind =
+  | 'both-modified'
+  | 'both-added'
+  | 'both-deleted'
+  | 'added-by-us'
+  | 'added-by-them'
+  | 'deleted-by-us'
+  | 'deleted-by-them';
+
 export interface StatusFile {
   path: string;
   origPath?: string;
   status: FileStatus;
+  /** Set only on entries in `StatusPayload.conflicted`. */
+  conflictKind?: ConflictKind;
 }
 
 export interface StatusPayload {

@@ -1,4 +1,4 @@
-import type { FileStatus, StatusFile, StatusPayload } from '../../shared/types.js';
+import type { ConflictKind, FileStatus, StatusFile, StatusPayload } from '../../shared/types.js';
 
 function letterStatus(ch: string): FileStatus {
   switch (ch) {
@@ -7,6 +7,19 @@ function letterStatus(ch: string): FileStatus {
     case 'R': return 'renamed';
     case 'C': return 'renamed';
     default: return 'modified';
+  }
+}
+
+/** Maps an unmerged entry's XY code (git status short-format) to a conflict kind. */
+function conflictKind(xy: string): ConflictKind {
+  switch (xy) {
+    case 'DD': return 'both-deleted';
+    case 'AA': return 'both-added';
+    case 'AU': return 'added-by-us';
+    case 'UA': return 'added-by-them';
+    case 'DU': return 'deleted-by-us';
+    case 'UD': return 'deleted-by-them';
+    default: return 'both-modified'; // UU
   }
 }
 
@@ -50,8 +63,9 @@ export function parseStatus(out: string): StatusPayload {
       pushEntry(payload, xy, path, origPath);
     } else if (tok.startsWith('u ')) {
       const f = tok.split(' ');
+      const xy = f[1]!;
       const path = f.slice(10).join(' ');
-      payload.conflicted.push({ path, status: 'conflicted' });
+      payload.conflicted.push({ path, status: 'conflicted', conflictKind: conflictKind(xy) });
     } else if (tok.startsWith('? ')) {
       payload.untracked.push({ path: tok.slice(2), status: 'untracked' });
     }
