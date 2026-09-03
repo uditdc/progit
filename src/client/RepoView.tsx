@@ -75,7 +75,7 @@ interface ToastState {
 
 export function RepoView({ repoPath }: { repoPath: string }) {
   const [credReq, setCredReq] = React.useState<{ id: string; prompt: string } | null>(null);
-  useLiveUpdates(repoPath, (e) => setCredReq({ id: e.id, prompt: e.prompt }));
+  const connection = useLiveUpdates(repoPath, (e) => setCredReq({ id: e.id, prompt: e.prompt }));
   const [settings, setSetting] = useSettings();
 
   const repoQ = useRepo(repoPath);
@@ -682,6 +682,11 @@ export function RepoView({ repoPath }: { repoPath: string }) {
         <div style={{ flex: 1 }} />
 
         <div className="v3-actions">
+          {connection === 'reconnecting' && (
+            <span className="conn-badge fade-in" title="Live-update connection dropped — retrying…">
+              <span className="conn-dot" /> Reconnecting…
+            </span>
+          )}
           <button
             className="tb-btn"
             disabled={actions.fetchRemote.isPending}
